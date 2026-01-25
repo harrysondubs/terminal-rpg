@@ -1,0 +1,81 @@
+"""
+NPC repository for NPC entity CRUD operations.
+"""
+
+import sqlite3
+from typing import Optional
+
+from .base import BaseRepository
+from ..models import NPC, datetime_from_db
+
+
+class NPCRepository(BaseRepository):
+    """Repository for NPC entity CRUD operations"""
+
+    def create(self, npc: NPC) -> NPC:
+        """Insert NPC, return with ID populated"""
+        npc.id = self._execute_insert(
+            """INSERT INTO npcs
+               (world_id, campaign_id, battle_id, name, character_class, character_race,
+                level, hp, max_hp, xp, gold)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (npc.world_id, npc.campaign_id, npc.battle_id, npc.name,
+             npc.character_class, npc.character_race,
+             npc.level, npc.hp, npc.max_hp, npc.xp, npc.gold)
+        )
+        npc.created_at = self._fetch_timestamp('npcs', npc.id)
+        return npc
+
+    def get_by_id(self, npc_id: int) -> Optional[NPC]:
+        """Fetch single NPC by ID"""
+        row = self._fetch_by_id('npcs', npc_id)
+        return self._row_to_npc(row) if row else None
+
+    def get_by_world(self, world_id: int, campaign_id: Optional[int] = None) -> list[NPC]:
+        """Get NPCs available in a world (optionally filtered by campaign)"""
+        if campaign_id is not None:
+            rows = self.db.conn.execute(
+                "SELECT * FROM npcs WHERE world_id = ? AND (campaign_id IS NULL OR campaign_id = ?)",
+                (world_id, campaign_id)
+            ).fetchall()
+        else:
+            rows = self.db.conn.execute(
+                "SELECT * FROM npcs WHERE world_id = ? AND campaign_id IS NULL",
+                (world_id,)
+            ).fetchall()
+        return [self._row_to_npc(row) for row in rows]
+
+    def update(self, npc: NPC) -> None:
+        """Update existing NPC"""
+        self.db.conn.execute(
+            """UPDATE npcs SET
+               world_id = ?, campaign_id = ?, battle_id = ?, name = ?, character_class = ?,
+               character_race = ?, level = ?, hp = ?, max_hp = ?, xp = ?, gold = ?
+               WHERE id = ?""",
+            (npc.world_id, npc.campaign_id, npc.battle_id, npc.name,
+             npc.character_class, npc.character_race,
+             npc.level, npc.hp, npc.max_hp, npc.xp, npc.gold, npc.id)
+        )
+        self.db.conn.commit()
+
+    def delete(self, npc_id: int) -> None:
+        """Delete NPC"""
+        self._delete_by_id('npcs', npc_id)
+
+    def _row_to_npc(self, row: sqlite3.Row) -> NPC:
+        """Convert database row to NPC dataclass"""
+        return NPC(
+            id=row['id'],
+            world_id=row['world_id'],
+            campaign_id=row['campaign_id'],
+            battle_id=row['battle_id'],
+            name=row['name'],
+            character_class=row['character_class'],
+            character_race=row['character_race'],
+            level=row['level'],
+            hp=row['hp'],
+            max_hp=row['max_hp'],
+            xp=row['xp'],
+            gold=row['gold'],
+            created_at=datetime_from_db(row['created_at'])
+        )
