@@ -12,6 +12,7 @@ from ..storage.repositories import (
     ItemRepository,
     WeaponRepository,
     ArmorRepository,
+    LocationRepository,
 )
 
 
@@ -155,11 +156,28 @@ def create_new_campaign(
     # Get repositories
     campaign_repo = CampaignRepository(db)
     player_repo = PlayerRepository(db)
+    location_repo = LocationRepository(db)
 
-    # 1. Create Campaign
+    # 1. Find starting location ("The Prancing Pony Inn")
+    locations = location_repo.get_by_world(world_id)
+    starting_location = None
+    for loc in locations:
+        if loc.name == "The Prancing Pony Inn":
+            starting_location = loc
+            break
+
+    # Fallback to first location if Prancing Pony not found
+    if not starting_location and locations:
+        starting_location = locations[0]
+
+    if not starting_location:
+        raise ValueError(f"No locations found in world {world_id}")
+
+    # 2. Create Campaign with starting location
     campaign = campaign_repo.create(Campaign(
         name=campaign_name,
-        world_id=world_id
+        world_id=world_id,
+        current_location_id=starting_location.id
     ))
 
     # 2. Calculate HP from constitution

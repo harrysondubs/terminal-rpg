@@ -3,7 +3,22 @@ Terminal RPG - Entry Point
 Main game entry point that handles database initialization and menu flow.
 """
 
+import logging
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Set up logging (DEBUG level to file only, don't spam console)
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('terminal_rpg_debug.log')
+    ]
+)
+
 from .storage.database import Database
 from .storage.seed import seed_database
 from .storage.models import Campaign, Player
@@ -12,6 +27,7 @@ from .engines.new_campaign import (
     create_character_class_presets,
     create_new_campaign
 )
+from .engines.game import GameEngine
 from .ui.display import (
     console,
     display_welcome,
@@ -37,7 +53,7 @@ def main():
     """
     try:
         # Database path
-        db_path = "game.db"
+        db_path = "games.db"
 
         # Initialize database if it doesn't exist
         if not os.path.exists(db_path):
@@ -61,9 +77,14 @@ def main():
                     campaign, player = run_new_game_flow(db)
                     if campaign and player:
                         # Successfully created campaign
-                        console.print("[green]Ready to begin your adventure![/green]")
-                        # TODO: Launch game engine here
-                        console.print("[yellow]Game engine not yet implemented. Returning to main menu.[/yellow]\n")
+                        console.print("[green]Ready to begin your adventure![/green]\n")
+
+                        # Launch game engine
+                        game_engine = GameEngine(db, campaign.id)
+                        game_engine.run()
+
+                        # After game ends, return to menu
+                        console.print("\n[yellow]Returning to main menu...[/yellow]\n")
                         continue
 
             elif choice == "load_game":

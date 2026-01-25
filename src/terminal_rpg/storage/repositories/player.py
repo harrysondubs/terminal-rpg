@@ -66,6 +66,22 @@ class PlayerRepository(BaseRepository):
         """Delete player"""
         self._delete_by_id('players', player_id)
 
+    def update_gold(self, player_id: int, gold: int) -> None:
+        """Update player's gold amount"""
+        self.db.conn.execute(
+            "UPDATE players SET gold = ? WHERE id = ?",
+            (gold, player_id)
+        )
+        self.db.conn.commit()
+
+    def update_hp(self, player_id: int, hp: int) -> None:
+        """Update player's current HP"""
+        self.db.conn.execute(
+            "UPDATE players SET hp = ? WHERE id = ?",
+            (hp, player_id)
+        )
+        self.db.conn.commit()
+
     # Inventory management methods
 
     def add_item(self, player_id: int, item_id: int, quantity: int = 1) -> None:

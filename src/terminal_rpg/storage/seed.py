@@ -27,7 +27,7 @@ from .models import (
 )
 
 
-def seed_database(db_path="game.db", force=False):
+def seed_database(db_path="games.db", force=False):
     """
     Populate database with initial game content.
 
@@ -665,7 +665,7 @@ if __name__ == "__main__":
     force = "--force" in sys.argv or "-f" in sys.argv
 
     # Check for custom db path
-    db_path = "game.db"
+    db_path = "games.db"
     for arg in sys.argv[1:]:
         if not arg.startswith("-"):
             db_path = arg

@@ -76,8 +76,8 @@ pip install -r requirements.txt
 Or if you're using a virtual environment:
 
 ```bash
-python3 -m venv terminal-rpg-venv
-source terminal-rpg-venv/bin/activate
+python3 -m venv terminal_rpg-venv
+source terminal_rpg-venv/bin/activate
 pip install -r requirements.txt
 ```
 
@@ -87,7 +87,7 @@ From the project root directory:
 
 ```bash
 cd src
-python3 -m terminal-rpg.main
+python3 -m terminal_rpg.main
 ```
 
 The game will:
@@ -112,7 +112,7 @@ The game will:
 ## Files Modified/Created
 
 ### Backend Logic
-- **[src/terminal-rpg/engines/new_campaign.py](src/terminal-rpg/engines/new_campaign.py)** (NEW)
+- **[src/terminal_rpg/engines/new_campaign.py](src/terminal_rpg/engines/new_campaign.py)** (NEW)
   - `get_available_worlds()` - Query worlds from database
   - `create_character_class_presets()` - Return class configurations
   - `create_new_campaign()` - Main campaign creation function
@@ -120,14 +120,14 @@ The game will:
   - `_add_starting_equipment()` - Add items to player inventory
 
 ### UI Display
-- **[src/terminal-rpg/ui/display.py](src/terminal-rpg/ui/display.py)** (UPDATED)
+- **[src/terminal_rpg/ui/display.py](src/terminal_rpg/ui/display.py)** (UPDATED)
   - `display_welcome()` - ASCII art welcome screen
   - `display_world_info()` - World details panel
   - `display_class_info()` - Class stats and equipment
   - `display_game_start_summary()` - Final character sheet
 
 ### UI Prompts
-- **[src/terminal-rpg/ui/prompts.py](src/terminal-rpg/ui/prompts.py)** (UPDATED)
+- **[src/terminal_rpg/ui/prompts.py](src/terminal_rpg/ui/prompts.py)** (UPDATED)
   - `show_start_menu()` - Main menu selection
   - `select_world()` - World selection menu
   - `select_class()` - Class selection menu
@@ -137,7 +137,7 @@ The game will:
   - `confirm_character_creation()` - Confirmation dialog
 
 ### Entry Point
-- **[src/terminal-rpg/main.py](src/terminal-rpg/main.py)** (UPDATED)
+- **[src/terminal_rpg/main.py](src/terminal_rpg/main.py)** (UPDATED)
   - `main()` - Entry point, database initialization, main menu loop
   - `run_new_game_flow()` - Complete new game creation orchestration
 
@@ -219,7 +219,7 @@ The implementation has been verified:
 Make sure you're running from the `src` directory and using the module syntax:
 ```bash
 cd src
-python3 -m terminal-rpg.main
+python3 -m terminal_rpg.main
 ```
 
 ### Database not found

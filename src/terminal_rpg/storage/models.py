@@ -64,6 +64,7 @@ class Campaign:
     """Main save file for a game campaign"""
     name: str
     world_id: int
+    current_location_id: Optional[int] = None
     id: Optional[int] = None
     created_at: Optional[datetime] = None
     last_save_at: Optional[datetime] = None

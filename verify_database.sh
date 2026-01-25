@@ -3,7 +3,7 @@
 echo "=== Database Verification Script ==="
 echo ""
 
-DB="src/game.db"
+DB="src/games.db"
 
 if [ ! -f "$DB" ]; then
     echo "❌ Database not found at $DB"

@@ -5,8 +5,8 @@ Test script to verify campaign creation logic without interactive prompts.
 import sys
 import os
 
-# Add the terminal-rpg directory to the path
-sys.path.insert(0, os.path.join(os.getcwd(), 'src', 'terminal-rpg'))
+# Add the terminal_rpg directory to the path
+sys.path.insert(0, os.path.join(os.getcwd(), 'src', 'terminal_rpg'))
 
 from storage.database import Database
 from engines.new_campaign import (
@@ -17,7 +17,7 @@ from engines.new_campaign import (
 
 def test_campaign_creation():
     """Test creating a campaign with a Fighter character"""
-    db_path = "src/game.db"
+    db_path = "src/games.db"
 
     with Database(db_path) as db:
         # 1. Get worlds

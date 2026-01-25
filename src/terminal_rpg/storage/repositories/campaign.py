@@ -19,8 +19,8 @@ class CampaignRepository(BaseRepository):
     def create(self, campaign: Campaign) -> Campaign:
         """Insert campaign, return with ID populated"""
         campaign.id = self._execute_insert(
-            "INSERT INTO campaigns (name, world_id) VALUES (?, ?)",
-            (campaign.name, campaign.world_id)
+            "INSERT INTO campaigns (name, world_id, current_location_id) VALUES (?, ?, ?)",
+            (campaign.name, campaign.world_id, campaign.current_location_id)
         )
         # Fetch both timestamps
         row = self.db.conn.execute(
@@ -58,6 +58,14 @@ class CampaignRepository(BaseRepository):
         )
         self.db.conn.commit()
 
+    def update_current_location(self, campaign_id: int, location_id: int) -> None:
+        """Update campaign's current location"""
+        self.db.conn.execute(
+            "UPDATE campaigns SET current_location_id = ?, last_save_at = datetime('now') WHERE id = ?",
+            (location_id, campaign_id)
+        )
+        self.db.conn.commit()
+
     def delete(self, campaign_id: int) -> None:
         """Delete campaign (cascades to all related data)"""
         self._delete_by_id('campaigns', campaign_id)
@@ -67,6 +75,7 @@ class CampaignRepository(BaseRepository):
         # Import here to avoid circular imports
         from .world import WorldRepository
         from .player import PlayerRepository
+        from .location import LocationRepository
 
         campaign = self.get_by_id(campaign_id)
         if not campaign:
@@ -75,12 +84,40 @@ class CampaignRepository(BaseRepository):
         # Get related repositories
         world_repo = WorldRepository(self.db)
         player_repo = PlayerRepository(self.db)
+        location_repo = LocationRepository(self.db)
 
         # Load all data
         world = world_repo.get_by_id(campaign.world_id)
         player = player_repo.get_by_campaign_id(campaign_id)
 
         if not player:
+            return None
+
+        # Load or set current location
+        location = None
+        if campaign.current_location_id:
+            location = location_repo.get_by_id(campaign.current_location_id)
+
+        # If no current location set, find "The Prancing Pony Inn" or use first location
+        if not location:
+            locations = location_repo.get_by_world(campaign.world_id, campaign_id=campaign_id)
+
+            # Try to find "The Prancing Pony Inn"
+            for loc in locations:
+                if loc.name == "The Prancing Pony Inn":
+                    location = loc
+                    break
+
+            # If not found, use first location
+            if not location and locations:
+                location = locations[0]
+
+            # Update campaign with chosen location
+            if location:
+                self.update_current_location(campaign_id, location.id)
+                campaign.current_location_id = location.id
+
+        if not location:
             return None
 
         equipped_weapons = player_repo.get_equipped_weapons(player.id)
@@ -93,6 +130,7 @@ class CampaignRepository(BaseRepository):
             campaign=campaign,
             world=world,
             player=player,
+            location=location,
             equipped_weapons=equipped_weapons,
             equipped_armor=equipped_armor,
             inventory_items=inventory_items,
@@ -106,6 +144,7 @@ class CampaignRepository(BaseRepository):
             id=row['id'],
             name=row['name'],
             world_id=row['world_id'],
+            current_location_id=row['current_location_id'],
             created_at=datetime_from_db(row['created_at']),
             last_save_at=datetime_from_db(row['last_save_at'])
         )

@@ -2,3 +2,4 @@ rich
 questionary
 anthropic
 inquirer
+python-dotenv

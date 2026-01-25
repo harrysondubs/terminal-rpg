@@ -61,9 +61,11 @@ class Database:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
                 world_id INTEGER NOT NULL,
+                current_location_id INTEGER,
                 created_at TEXT DEFAULT (datetime('now')),
                 last_save_at TEXT DEFAULT (datetime('now')),
-                FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE RESTRICT
+                FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE RESTRICT,
+                FOREIGN KEY (current_location_id) REFERENCES locations(id) ON DELETE SET NULL
             )
         """)
 
@@ -242,6 +244,7 @@ class Database:
 
         # Create indexes for performance
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_campaigns_world ON campaigns(world_id)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_campaigns_location ON campaigns(current_location_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_players_campaign ON players(campaign_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_items_world ON items(world_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_items_campaign ON items(campaign_id)")
