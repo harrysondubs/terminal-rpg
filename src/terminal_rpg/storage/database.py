@@ -267,4 +267,18 @@ class Database:
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_player_weapons_player ON player_weapons(player_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_player_armor_player ON player_armor(player_id)")
 
+        # Create unique constraints for locations
+        # Prevent duplicate world-level locations (campaign_id IS NULL)
+        cursor.execute("""
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_locations_unique_world_level
+            ON locations(world_id, name)
+            WHERE campaign_id IS NULL
+        """)
+        # Prevent duplicate campaign-specific locations
+        cursor.execute("""
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_locations_unique_campaign_level
+            ON locations(world_id, campaign_id, name)
+            WHERE campaign_id IS NOT NULL
+        """)
+
         self.conn.commit()

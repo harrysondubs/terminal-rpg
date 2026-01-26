@@ -13,32 +13,31 @@ load_dotenv()
 # Set up logging (DEBUG level to file only, don't spam console)
 logging.basicConfig(
     level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
     handlers=[
         logging.FileHandler('terminal_rpg_debug.log')
     ]
 )
 
 from .storage.database import Database
-from .storage.seed import seed_database
 from .storage.models import Campaign, Player
+from .storage.repositories import WorldRepository
 from .engines.new_campaign import (
-    get_available_worlds,
-    create_character_class_presets,
-    create_new_campaign
+    get_available_presets,
+    create_new_campaign_from_preset
 )
 from .engines.game import GameEngine
 from .ui.display import (
     console,
     display_welcome,
-    display_world_info,
-    display_class_info,
+    display_preset_info,
+    display_class_info_from_preset,
     display_game_start_summary
 )
 from .ui.prompts import (
     show_start_menu,
-    select_world,
-    select_class,
+    select_preset,
+    select_class_from_preset,
     get_campaign_name,
     get_character_name,
     get_character_description,
@@ -55,10 +54,11 @@ def main():
         # Database path
         db_path = "games.db"
 
-        # Initialize database if it doesn't exist
+        # Initialize database schema if it doesn't exist
         if not os.path.exists(db_path):
             console.print("[yellow]Database not found. Initializing...[/yellow]")
-            seed_database(db_path, force=True)
+            with Database(db_path) as db:
+                db.create_schema()
             console.print("[green]Database initialized successfully![/green]\n")
 
         # Display welcome screen
@@ -100,7 +100,7 @@ def main():
 
 def run_new_game_flow(db: Database) -> tuple[Campaign, Player] | tuple[None, None]:
     """
-    Execute the new game creation flow.
+    Execute the new game creation flow with preset system.
 
     Args:
         db: Connected Database instance
@@ -108,32 +108,31 @@ def run_new_game_flow(db: Database) -> tuple[Campaign, Player] | tuple[None, Non
     Returns:
         Tuple of (Campaign, Player) if successful, (None, None) if cancelled
     """
-    # 1. World Selection
+    # 1. Preset Selection
     console.print()
-    worlds = get_available_worlds(db)
+    presets = get_available_presets()
 
-    if not worlds:
-        console.print("[red]No worlds available! Please seed the database.[/red]\n")
+    if not presets:
+        console.print("[red]No campaign presets available![/red]\n")
         return None, None
 
-    selected_world = select_world(worlds)
+    selected_preset = select_preset(presets)
 
-    if not selected_world:
-        console.print("[yellow]World creation not yet implemented.[/yellow]\n")
+    if not selected_preset:
+        console.print("[yellow]Campaign creation cancelled.[/yellow]\n")
         return None, None
 
-    display_world_info(selected_world)
+    display_preset_info(selected_preset)
 
-    # 2. Class Selection
-    classes = create_character_class_presets()
-    class_result = select_class(classes)
+    # 2. Class Selection (from preset)
+    class_result = select_class_from_preset(selected_preset)
 
     if not class_result:
         console.print("[yellow]Character creation cancelled.[/yellow]\n")
         return None, None
 
-    class_name, class_data = class_result
-    display_class_info(class_name, class_data)
+    class_name, class_preset = class_result
+    display_class_info_from_preset(class_name, class_preset)
 
     # 3. Campaign Naming
     campaign_name = get_campaign_name()
@@ -161,20 +160,25 @@ def run_new_game_flow(db: Database) -> tuple[Campaign, Player] | tuple[None, Non
         console.print("[yellow]Character creation cancelled.[/yellow]\n")
         return None, None
 
-    # 7. Create Campaign
+    # 7. Create Campaign from Preset
     try:
         with console.status("[bold green]Creating your adventure...", spinner="dots"):
-            campaign, player = create_new_campaign(
+            campaign, player = create_new_campaign_from_preset(
                 db,
-                selected_world.id,
+                selected_preset,
                 campaign_name,
                 player_name,
                 player_description,
-                class_data
+                class_preset
             )
 
         console.print("[green]Campaign created successfully![/green]\n")
-        display_game_start_summary(campaign, player, selected_world)
+
+        # Get world for display
+        world_repo = WorldRepository(db)
+        world = world_repo.get_by_id(campaign.world_id)
+
+        display_game_start_summary(campaign, player, world)
 
         return campaign, player
 

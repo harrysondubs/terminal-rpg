@@ -1,12 +1,11 @@
 """
 Campaign creation engine for RPG game.
-Handles character class presets, equipment setup, and campaign initialization.
+Handles preset-based campaign creation with equipment setup and initialization.
 """
 
 from ..storage.database import Database
-from ..storage.models import Campaign, Player, World
+from ..storage.models import Campaign, Player
 from ..storage.repositories import (
-    WorldRepository,
     CampaignRepository,
     PlayerRepository,
     ItemRepository,
@@ -14,137 +13,54 @@ from ..storage.repositories import (
     ArmorRepository,
     LocationRepository,
 )
+from ..campaign_presets import CampaignPreset, CharacterClassPreset, PresetRegistry, PresetLoader
 
 
-def get_available_worlds(db: Database) -> list[World]:
+def get_available_presets() -> list[CampaignPreset]:
     """
-    Query all available worlds from the database.
+    Get all available campaign presets.
+
+    Returns:
+        List of CampaignPreset objects
+    """
+    PresetRegistry.discover_presets()
+    return PresetRegistry.get_all()
+
+
+def load_preset_into_database(db: Database, preset: CampaignPreset) -> int:
+    """
+    Load a campaign preset into the database.
 
     Args:
         db: Connected Database instance
+        preset: The CampaignPreset to load
 
     Returns:
-        List of World objects
+        The world_id of the loaded world
     """
-    world_repo = WorldRepository(db)
-    return world_repo.get_all()
+    loader = PresetLoader(db)
+    return loader.load_preset(preset)
 
 
-def create_character_class_presets() -> dict[str, dict]:
-    """
-    Return character class definitions with stats and equipment.
-
-    Returns:
-        Dictionary mapping class names to their configuration:
-        {
-            "Fighter": {
-                "name": "Fighter",
-                "description": "...",
-                "character_race": "Human",
-                "stats": {...},
-                "base_hp": 50,
-                "starting_gold": 100,
-                "equipment": {...},
-                "auto_equip": {...}
-            },
-            ...
-        }
-    """
-    return {
-        "Fighter": {
-            "name": "Fighter",
-            "description": "A mighty warrior skilled in melee combat and heavy armor",
-            "character_race": "Human",
-            "stats": {
-                "strength": 16,
-                "dexterity": 12,
-                "constitution": 15,
-                "intelligence": 8,
-                "wisdom": 10,
-                "charisma": 9
-            },
-            "base_hp": 50,
-            "starting_gold": 100,
-            "equipment": {
-                "weapons": ["Iron Sword", "Battle Axe"],
-                "armor": ["Leather Armor", "Steel Helmet"],
-                "items": ["Minor Health Potion"]
-            },
-            "auto_equip": {
-                "weapon": "Iron Sword",
-                "armor": ["Leather Armor", "Steel Helmet"]
-            }
-        },
-        "Thief": {
-            "name": "Thief",
-            "description": "A nimble rogue who relies on speed, stealth, and precision",
-            "character_race": "Halfling",
-            "stats": {
-                "strength": 10,
-                "dexterity": 17,
-                "constitution": 12,
-                "intelligence": 11,
-                "wisdom": 12,
-                "charisma": 14
-            },
-            "base_hp": 40,
-            "starting_gold": 75,
-            "equipment": {
-                "weapons": ["Rusty Dagger", "Wooden Bow"],
-                "armor": ["Leather Armor", "Leather Boots"],
-                "items": ["Minor Health Potion"]
-            },
-            "auto_equip": {
-                "weapon": "Rusty Dagger",
-                "armor": ["Leather Armor", "Leather Boots"]
-            }
-        },
-        "Bard": {
-            "name": "Bard",
-            "description": "A charismatic performer who weaves magic through music and words",
-            "character_race": "Elf",
-            "stats": {
-                "strength": 9,
-                "dexterity": 13,
-                "constitution": 11,
-                "intelligence": 14,
-                "wisdom": 12,
-                "charisma": 16
-            },
-            "base_hp": 35,
-            "starting_gold": 80,
-            "equipment": {
-                "weapons": ["Rusty Dagger", "Wooden Bow"],
-                "armor": ["Leather Armor", "Leather Cap"],
-                "items": ["Minor Health Potion"]
-            },
-            "auto_equip": {
-                "weapon": "Rusty Dagger",
-                "armor": ["Leather Armor", "Leather Cap"]
-            }
-        }
-    }
-
-
-def create_new_campaign(
+def create_new_campaign_from_preset(
     db: Database,
-    world_id: int,
+    preset: CampaignPreset,
     campaign_name: str,
     player_name: str,
     player_description: str,
-    class_preset: dict
+    class_preset: CharacterClassPreset
 ) -> tuple[Campaign, Player]:
     """
-    Create a new campaign with player and starting inventory.
+    Create a new campaign from a campaign preset.
     All operations are atomic - if any step fails, entire transaction rolls back.
 
     Args:
         db: Connected Database instance
-        world_id: ID of selected world
+        preset: The CampaignPreset to use
         campaign_name: Name for the campaign
         player_name: Player's character name
         player_description: Character background/appearance
-        class_preset: Class configuration dict from create_character_class_presets()
+        class_preset: CharacterClassPreset from the preset
 
     Returns:
         Tuple of (Campaign, Player) with IDs populated
@@ -153,62 +69,74 @@ def create_new_campaign(
         ValueError: If equipment not found in database
         sqlite3.Error: If any database operation fails
     """
+    # 1. Load preset into database (idempotent)
+    world_id = load_preset_into_database(db, preset)
+
     # Get repositories
     campaign_repo = CampaignRepository(db)
     player_repo = PlayerRepository(db)
     location_repo = LocationRepository(db)
 
-    # 1. Find starting location ("The Prancing Pony Inn")
+    # 2. Find starting location
     locations = location_repo.get_by_world(world_id)
     starting_location = None
     for loc in locations:
-        if loc.name == "The Prancing Pony Inn":
+        if loc.name == preset.starting_location_name:
             starting_location = loc
             break
 
-    # Fallback to first location if Prancing Pony not found
+    # Fallback to first location if specified starting location not found
     if not starting_location and locations:
         starting_location = locations[0]
 
     if not starting_location:
         raise ValueError(f"No locations found in world {world_id}")
 
-    # 2. Create Campaign with starting location
+    # 3. Create Campaign with starting location
     campaign = campaign_repo.create(Campaign(
         name=campaign_name,
         world_id=world_id,
         current_location_id=starting_location.id
     ))
 
-    # 2. Calculate HP from constitution
-    constitution = class_preset['stats']['constitution']
-    max_hp = class_preset['base_hp'] + (constitution * 2)
+    # 4. Calculate HP from constitution
+    constitution = class_preset.stats['constitution']
+    max_hp = class_preset.base_hp + (constitution * 2)
 
-    # 3. Create Player with class stats
+    # 5. Create Player with class stats
     player = player_repo.create(Player(
         campaign_id=campaign.id,
         name=player_name,
         description=player_description,
-        character_class=class_preset['name'],
-        character_race=class_preset['character_race'],
+        character_class=class_preset.name,
+        character_race=class_preset.character_race,
         level=1,
         xp=0,
         hp=max_hp,
         max_hp=max_hp,
-        gold=class_preset['starting_gold'],
-        strength=class_preset['stats']['strength'],
-        dexterity=class_preset['stats']['dexterity'],
-        constitution=class_preset['stats']['constitution'],
-        intelligence=class_preset['stats']['intelligence'],
-        wisdom=class_preset['stats']['wisdom'],
-        charisma=class_preset['stats']['charisma']
+        gold=class_preset.starting_gold,
+        strength=class_preset.stats['strength'],
+        dexterity=class_preset.stats['dexterity'],
+        constitution=class_preset.stats['constitution'],
+        intelligence=class_preset.stats['intelligence'],
+        wisdom=class_preset.stats['wisdom'],
+        charisma=class_preset.stats['charisma']
     ))
 
-    # 4. Resolve equipment IDs from names
-    equipment_ids = _resolve_equipment_ids(db, world_id, class_preset['equipment'])
+    # 6. Resolve equipment IDs from names
+    equipment_config = {
+        'weapons': class_preset.equipment_weapons,
+        'armor': class_preset.equipment_armor,
+        'items': class_preset.equipment_items
+    }
+    equipment_ids = _resolve_equipment_ids(db, world_id, equipment_config)
 
-    # 5. Add equipment to inventory and auto-equip
-    _add_starting_equipment(db, player.id, equipment_ids, class_preset['auto_equip'])
+    # 7. Add equipment to inventory and auto-equip
+    auto_equip_config = {
+        'weapon': class_preset.auto_equip_weapon,
+        'armor': class_preset.auto_equip_armor
+    }
+    _add_starting_equipment(db, player.id, equipment_ids, auto_equip_config)
 
     return campaign, player
 

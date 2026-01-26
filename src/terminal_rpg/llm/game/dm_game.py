@@ -2,7 +2,6 @@
 Dungeon Master game loop using Claude API.
 """
 
-import importlib
 import json
 import logging
 import sys
@@ -29,21 +28,45 @@ from .message_history import (
 from .prompts.dm_game_prompts import create_dm_system_prompt
 from .tools import (
     ABILITY_CHECK_TOOL,
+    ADD_ARMOR_TOOL,
+    ADD_ITEM_TOOL,
+    ADD_WEAPON_TOOL,
+    CHANGE_LOCATION_TOOL,
+    CREATE_LOCATION_TOOL,
     GOLD_TOOL,
     HP_TOOL,
-    INVENTORY_TOOL,
-    LOCATION_TOOL,
+    REMOVE_INVENTORY_TOOL,
+    VIEW_INVENTORY_TOOL,
+    VIEW_LOCATIONS_TOOL,
+    add_armor_execute,
+    add_item_execute,
+    add_weapon_execute,
+    change_location_execute,
+    create_location_execute,
     execute_ability_check,
     execute_gold,
     execute_hp,
-    execute_inventory,
-    execute_location,
+    remove_inventory_execute,
+    view_inventory_execute,
+    view_locations_execute,
 )
 
 console = Console()
 
 # All available tools
-TOOLS = [INVENTORY_TOOL, LOCATION_TOOL, GOLD_TOOL, HP_TOOL, ABILITY_CHECK_TOOL]
+TOOLS = [
+    VIEW_INVENTORY_TOOL,
+    ADD_ITEM_TOOL,
+    ADD_WEAPON_TOOL,
+    ADD_ARMOR_TOOL,
+    REMOVE_INVENTORY_TOOL,
+    CHANGE_LOCATION_TOOL,
+    VIEW_LOCATIONS_TOOL,
+    CREATE_LOCATION_TOOL,
+    GOLD_TOOL,
+    HP_TOOL,
+    ABILITY_CHECK_TOOL
+]
 
 MAX_TOOL_ITERATIONS = 5  # Prevent infinite tool loops
 
@@ -98,74 +121,61 @@ class DMGame:
         player = self.game_state.player
         location = self.game_state.location
 
-        welcome = f"""[bold cyan]Welcome back, {player.name}![/bold cyan]
+        welcome = f"""[bold cyan]Welcome, {player.name}[/bold cyan]
 
 [bold]Current Location:[/bold] {location.name}
 {location.description}
 
-[dim]Type your actions or questions. Type 'quit' to exit. Type '/reload' to reload code changes.[/dim]"""
+[dim]Type your actions or questions. Type 'quit' to exit.
+Quick commands: /inventory, /stats[/dim]"""
 
-        console.print(Panel(welcome, title="Adventure Continues", border_style="cyan"))
+        console.print(Panel(welcome, title=f"{self.game_state.world.name}", border_style="cyan"))
+
+    def _display_inventory(self):
+        """Display player's current inventory."""
+        from ...ui.display import display_player_inventory
+        display_player_inventory(self.game_state)
+
+    def _display_stats(self):
+        """Display player's current stats."""
+        from ...ui.display import display_player_stats
+        display_player_stats(self.game_state.player)
 
     def _reload_modules(self):
         """Reload game modules for hot-reload during development."""
+        from .utils import reload_game_modules
+        
         console.print()
         console.print("[yellow]🔄 Reloading game modules...[/yellow]")
 
         try:
-            # List of modules to reload in dependency order
-            modules_to_reload = [
-                'terminal_rpg.engines.dice',
-                'terminal_rpg.llm.game.tools.inventory_tool',
-                'terminal_rpg.llm.game.tools.location_tool',
-                'terminal_rpg.llm.game.tools.gold_tool',
-                'terminal_rpg.llm.game.tools.hp_tool',
-                'terminal_rpg.llm.game.tools.ability_check_tool',
-                'terminal_rpg.llm.game.tools',
-                'terminal_rpg.llm.game.prompts.dm_game_prompts',
-                'terminal_rpg.llm.game.message_history',
-            ]
+            reloaded_count, components = reload_game_modules()
 
-            reloaded_count = 0
-            for module_name in modules_to_reload:
-                if module_name in sys.modules:
-                    importlib.reload(sys.modules[module_name])
-                    reloaded_count += 1
-                    logger.info(f"Reloaded module: {module_name}")
-
-            # Update global references before reimporting
-            global TOOLS, execute_inventory, execute_location, execute_gold, execute_hp, execute_ability_check
+            # Update global references with reloaded components
+            global TOOLS, view_inventory_execute, add_item_execute, add_weapon_execute, add_armor_execute
+            global remove_inventory_execute, change_location_execute, view_locations_execute, create_location_execute
+            global execute_gold, execute_hp, execute_ability_check
             global reconstruct_message_history, save_assistant_message, save_tool_call, save_tool_results, save_user_message
             global create_dm_system_prompt
 
-            # Reimport the tools to get fresh definitions
-            from .tools import (
-                ABILITY_CHECK_TOOL,
-                GOLD_TOOL,
-                HP_TOOL,
-                INVENTORY_TOOL,
-                LOCATION_TOOL,
-                execute_ability_check,
-                execute_gold,
-                execute_hp,
-                execute_inventory,
-                execute_location,
-            )
-
-            # Reimport message history functions
-            from .message_history import (
-                reconstruct_message_history,
-                save_assistant_message,
-                save_tool_call,
-                save_tool_results,
-                save_user_message,
-            )
-
-            # Reimport prompt generation
-            from .prompts.dm_game_prompts import create_dm_system_prompt
-
-            # Update global TOOLS list
-            TOOLS = [INVENTORY_TOOL, LOCATION_TOOL, GOLD_TOOL, HP_TOOL, ABILITY_CHECK_TOOL]
+            TOOLS = components['TOOLS']
+            view_inventory_execute = components['view_inventory_execute']
+            add_item_execute = components['add_item_execute']
+            add_weapon_execute = components['add_weapon_execute']
+            add_armor_execute = components['add_armor_execute']
+            remove_inventory_execute = components['remove_inventory_execute']
+            change_location_execute = components['change_location_execute']
+            view_locations_execute = components['view_locations_execute']
+            create_location_execute = components['create_location_execute']
+            execute_gold = components['execute_gold']
+            execute_hp = components['execute_hp']
+            execute_ability_check = components['execute_ability_check']
+            reconstruct_message_history = components['reconstruct_message_history']
+            save_assistant_message = components['save_assistant_message']
+            save_tool_call = components['save_tool_call']
+            save_tool_results = components['save_tool_results']
+            save_user_message = components['save_user_message']
+            create_dm_system_prompt = components['create_dm_system_prompt']
 
             console.print(f"[green]✓ Reloaded {reloaded_count} modules successfully![/green]")
             console.print("[dim]Changes to tools, prompts, and game logic are now active.[/dim]")
@@ -191,6 +201,16 @@ class DMGame:
         # Handle reload command
         if user_input.lower() == '/reload':
             self._reload_modules()
+            return
+
+        # Handle inventory command
+        if user_input.lower() == '/inventory':
+            self._display_inventory()
+            return
+
+        # Handle stats command
+        if user_input.lower() == '/stats':
+            self._display_stats()
             return
 
         # Save user message
@@ -361,11 +381,72 @@ class DMGame:
         """
         try:
             if tool_name == "view_player_inventory":
-                return execute_inventory(self.game_state)
+                return view_inventory_execute(self.game_state)
+
+            elif tool_name == "add_item_to_inventory":
+                return add_item_execute(
+                    tool_input["name"],
+                    tool_input["description"],
+                    tool_input["rarity"],
+                    tool_input["value"],
+                    self.game_state,
+                    self.db,
+                    tool_input.get("quantity", 1)
+                )
+
+            elif tool_name == "add_weapon_to_inventory":
+                return add_weapon_execute(
+                    tool_input["name"],
+                    tool_input["description"],
+                    tool_input["rarity"],
+                    tool_input["type"],
+                    tool_input["hands_required"],
+                    tool_input["attack"],
+                    tool_input["value"],
+                    self.game_state,
+                    self.db,
+                    tool_input.get("quantity", 1)
+                )
+
+            elif tool_name == "add_armor_to_inventory":
+                return add_armor_execute(
+                    tool_input["name"],
+                    tool_input["description"],
+                    tool_input["rarity"],
+                    tool_input["type"],
+                    tool_input["defense"],
+                    tool_input["value"],
+                    self.game_state,
+                    self.db,
+                    tool_input.get("quantity", 1)
+                )
+
+            elif tool_name == "remove_from_inventory":
+                return remove_inventory_execute(
+                    tool_input["type"],
+                    tool_input["name"],
+                    self.game_state,
+                    self.db,
+                    tool_input.get("quantity", 1)
+                )
 
             elif tool_name == "change_location":
-                return execute_location(
+                return change_location_execute(
                     tool_input["location_name"],
+                    self.game_state,
+                    self.db
+                )
+
+            elif tool_name == "view_locations":
+                return view_locations_execute(
+                    self.game_state,
+                    self.db
+                )
+
+            elif tool_name == "create_location":
+                return create_location_execute(
+                    tool_input["location_name"],
+                    tool_input["description"],
                     self.game_state,
                     self.db
                 )

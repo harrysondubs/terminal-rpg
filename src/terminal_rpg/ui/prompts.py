@@ -4,6 +4,7 @@ Questionary interactions for user input.
 
 import questionary
 from ..storage.models import World
+from ..campaign_presets import CampaignPreset, CharacterClassPreset
 
 
 def show_start_menu() -> str:
@@ -137,6 +138,57 @@ def get_character_description() -> str | None:
         multiline=False,  # Set to False for better terminal compatibility
         validate=lambda text: len(text) > 0 and len(text) <= 500 or "Description must be 1-500 characters"
     ).ask()
+
+
+def select_preset(presets: list[CampaignPreset]) -> CampaignPreset | None:
+    """
+    Display campaign preset selection menu.
+
+    Args:
+        presets: List of available campaign presets
+
+    Returns:
+        Selected CampaignPreset or None if cancelled
+    """
+    choices = [preset.display_name for preset in presets]
+
+    answer = questionary.select(
+        "Select a campaign preset:",
+        choices=choices
+    ).ask()
+
+    if answer is None:
+        return None
+
+    # Find and return selected preset
+    for preset in presets:
+        if preset.display_name == answer:
+            return preset
+
+    return None
+
+
+def select_class_from_preset(preset: CampaignPreset) -> tuple[str, CharacterClassPreset] | None:
+    """
+    Display class selection menu for a specific preset.
+
+    Args:
+        preset: The CampaignPreset containing available classes
+
+    Returns:
+        Tuple of (class_name, CharacterClassPreset) or None if cancelled
+    """
+    choices = list(preset.character_classes.keys())
+
+    answer = questionary.select(
+        f"Select your character class:",
+        choices=choices
+    ).ask()
+
+    if answer is None:
+        return None
+
+    return (answer, preset.character_classes[answer])
 
 
 def confirm_character_creation(campaign_name: str, player_name: str, class_name: str) -> bool:

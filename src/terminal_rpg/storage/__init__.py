@@ -5,12 +5,10 @@ Provides:
 - Data models (dataclasses and enums)
 - Database connection management
 - Repository pattern for CRUD operations
-- Database seeding utilities
 """
 
 # Database
 from .database import Database
-from .seed import seed_database
 
 # Models
 from .models import (
@@ -44,7 +42,6 @@ from .repositories import (
 __all__ = [
     # Database
     'Database',
-    'seed_database',
     # Enums
     'Rarity',
     'WeaponType',
