@@ -21,27 +21,31 @@ logging.basicConfig(
 
 from .storage.database import Database
 from .storage.models import Campaign, Player
-from .storage.repositories import WorldRepository
+from .storage.repositories import WorldRepository, CampaignRepository
 from .engines.new_campaign import (
     get_available_presets,
     create_new_campaign_from_preset
 )
 from .engines.game import GameEngine
-from .ui.display import (
+from .ui.menu_display import (
     console,
     display_welcome,
     display_preset_info,
     display_class_info_from_preset,
-    display_game_start_summary
+    display_game_start_summary,
+    display_location_summary,
+    display_recent_messages,
+    display_leaderboard
 )
 from .ui.prompts import (
     show_start_menu,
-    select_preset,
-    select_class_from_preset,
-    get_campaign_name,
-    get_character_name,
-    get_character_description,
-    confirm_character_creation
+    select_preset_with_nav,
+    select_class_from_preset_with_nav,
+    get_campaign_name_with_nav,
+    get_character_name_with_nav,
+    get_character_description_with_nav,
+    confirm_character_creation_with_nav,
+    select_saved_campaign
 )
 
 
@@ -88,8 +92,25 @@ def main():
                         continue
 
             elif choice == "load_game":
-                console.print("\n[yellow]Load game feature not yet implemented.[/yellow]\n")
-                continue
+                with Database(db_path) as db:
+                    campaign = run_load_game_flow(db)
+                    if campaign:
+                        # Successfully loaded campaign
+                        console.print("[green]Ready to continue your adventure![/green]\n")
+
+                        # Launch game engine
+                        game_engine = GameEngine(db, campaign.id)
+                        game_engine.run()
+
+                        # After game ends, return to menu
+                        console.print("\n[yellow]Returning to main menu...[/yellow]\n")
+                        continue
+
+            elif choice == "leaderboard":
+                with Database(db_path) as db:
+                    run_leaderboard_flow(db)
+                    # Return to main menu after viewing leaderboard
+                    continue
 
     except KeyboardInterrupt:
         console.print("\n\n[yellow]Game interrupted. Goodbye![/yellow]\n")
@@ -101,6 +122,7 @@ def main():
 def run_new_game_flow(db: Database) -> tuple[Campaign, Player] | tuple[None, None]:
     """
     Execute the new game creation flow with preset system.
+    Supports navigation: users can go back to previous steps or cancel.
 
     Args:
         db: Connected Database instance
@@ -108,7 +130,6 @@ def run_new_game_flow(db: Database) -> tuple[Campaign, Player] | tuple[None, Non
     Returns:
         Tuple of (Campaign, Player) if successful, (None, None) if cancelled
     """
-    # 1. Preset Selection
     console.print()
     presets = get_available_presets()
 
@@ -116,51 +137,106 @@ def run_new_game_flow(db: Database) -> tuple[Campaign, Player] | tuple[None, Non
         console.print("[red]No campaign presets available![/red]\n")
         return None, None
 
-    selected_preset = select_preset(presets)
+    # State variables to store selections
+    selected_preset = None
+    class_name = None
+    class_preset = None
+    player_name = None
+    campaign_name = None
+    player_description = None
 
-    if not selected_preset:
-        console.print("[yellow]Campaign creation cancelled.[/yellow]\n")
-        return None, None
+    # State machine: step numbers allow forward and backward navigation
+    current_step = 1
+    
+    while True:
+        # Step 1: Preset Selection
+        if current_step == 1:
+            result = select_preset_with_nav(presets)
+            
+            if result == "cancel":
+                console.print("[yellow]Campaign creation cancelled.[/yellow]\n")
+                return None, None
+            
+            selected_preset = result
+            display_preset_info(selected_preset)
+            current_step = 2
 
-    display_preset_info(selected_preset)
+        # Step 2: Class Selection
+        elif current_step == 2:
+            result = select_class_from_preset_with_nav(selected_preset)
+            
+            if result == "cancel":
+                console.print("[yellow]Campaign creation cancelled.[/yellow]\n")
+                return None, None
+            elif result == "back":
+                current_step = 1
+                continue
+            
+            class_name, class_preset = result
+            display_class_info_from_preset(class_name, class_preset)
+            current_step = 3
 
-    # 2. Class Selection (from preset)
-    class_result = select_class_from_preset(selected_preset)
+        # Step 3: Character Name
+        elif current_step == 3:
+            result = get_character_name_with_nav()
+            
+            if result == "cancel":
+                console.print("[yellow]Campaign creation cancelled.[/yellow]\n")
+                return None, None
+            elif result == "back":
+                current_step = 2
+                continue
+            
+            player_name = result
+            current_step = 4
 
-    if not class_result:
-        console.print("[yellow]Character creation cancelled.[/yellow]\n")
-        return None, None
+        # Step 4: Campaign Name
+        elif current_step == 4:
+            result = get_campaign_name_with_nav()
+            
+            if result == "cancel":
+                console.print("[yellow]Campaign creation cancelled.[/yellow]\n")
+                return None, None
+            elif result == "back":
+                current_step = 3
+                continue
+            
+            campaign_name = result
+            current_step = 5
 
-    class_name, class_preset = class_result
-    display_class_info_from_preset(class_name, class_preset)
+        # Step 5: Character Description
+        elif current_step == 5:
+            result = get_character_description_with_nav()
+            
+            if result == "cancel":
+                console.print("[yellow]Campaign creation cancelled.[/yellow]\n")
+                return None, None
+            elif result == "back":
+                current_step = 4
+                continue
+            
+            player_description = result
+            current_step = 6
 
-    # 3. Campaign Naming
-    campaign_name = get_campaign_name()
+        # Step 6: Confirmation
+        elif current_step == 6:
+            result = confirm_character_creation_with_nav(
+                campaign_name,
+                player_name,
+                class_name
+            )
+            
+            if result == "cancel":
+                console.print("[yellow]Campaign creation cancelled.[/yellow]\n")
+                return None, None
+            elif result == "back":
+                current_step = 5
+                continue
+            elif result == "confirm":
+                # Proceed to creation
+                break
 
-    if not campaign_name:
-        console.print("[yellow]Character creation cancelled.[/yellow]\n")
-        return None, None
-
-    # 4. Character Naming
-    player_name = get_character_name()
-
-    if not player_name:
-        console.print("[yellow]Character creation cancelled.[/yellow]\n")
-        return None, None
-
-    # 5. Character Description
-    player_description = get_character_description()
-
-    if not player_description:
-        console.print("[yellow]Character creation cancelled.[/yellow]\n")
-        return None, None
-
-    # 6. Confirmation
-    if not confirm_character_creation(campaign_name, player_name, class_name):
-        console.print("[yellow]Character creation cancelled.[/yellow]\n")
-        return None, None
-
-    # 7. Create Campaign from Preset
+    # Create Campaign from Preset
     try:
         with console.status("[bold green]Creating your adventure...", spinner="dots"):
             campaign, player = create_new_campaign_from_preset(
@@ -188,6 +264,81 @@ def run_new_game_flow(db: Database) -> tuple[Campaign, Player] | tuple[None, Non
     except Exception as e:
         console.print(f"[red]An unexpected error occurred: {e}[/red]\n")
         return None, None
+
+
+def run_load_game_flow(db: Database) -> Campaign | None:
+    """
+    Execute the load game flow.
+
+    Args:
+        db: Connected Database instance
+
+    Returns:
+        Selected Campaign if successful, None if cancelled or no saves
+    """
+    from .llm.game.message_history import get_recent_messages_for_display
+
+    # 1. Get all campaigns with world names
+    campaign_repo = CampaignRepository(db)
+    campaigns_with_worlds = campaign_repo.get_all_active_with_world_names()
+
+    # 2. Handle empty database
+    if not campaigns_with_worlds:
+        console.print("[yellow]No saved games found.[/yellow]\n")
+        return None
+
+    # 3. Show selection menu
+    selected_campaign = select_saved_campaign(campaigns_with_worlds)
+
+    # 4. Handle cancellation
+    if not selected_campaign:
+        console.print("[yellow]Load game cancelled.[/yellow]\n")
+        return None
+
+    # 5. Load full game state
+    game_state = campaign_repo.load_game_state(selected_campaign.id)
+
+    if not game_state:
+        console.print("[red]Error: Could not load game state.[/red]\n")
+        return None
+
+    # 6. Display location summary
+    console.print()
+    display_location_summary(
+        game_state.location,
+        game_state.world.name,
+        game_state.player.name
+    )
+
+    # 7. Get and display recent messages for context
+    recent_messages = get_recent_messages_for_display(
+        selected_campaign.id,
+        db,
+        limit=6  # Last 6 messages (3 exchanges)
+    )
+
+    if recent_messages:
+        display_recent_messages(recent_messages, max_messages=3)
+
+    console.print("[green]Game loaded successfully![/green]\n")
+
+    return selected_campaign
+
+
+def run_leaderboard_flow(db: Database) -> None:
+    """
+    Display the campaign leaderboard showing top players by XP.
+
+    Args:
+        db: Connected Database instance
+    """
+    campaign_repo = CampaignRepository(db)
+    leaderboard_data = campaign_repo.get_leaderboard(limit=10)
+
+    display_leaderboard(leaderboard_data)
+
+    # Wait for user to press Enter
+    input()
 
 
 if __name__ == "__main__":

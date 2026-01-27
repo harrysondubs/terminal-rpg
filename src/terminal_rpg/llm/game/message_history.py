@@ -230,3 +230,36 @@ def save_tool_results(
         type=LogType.TOOL_RESULT,
         content=content
     ))
+
+
+def get_recent_messages_for_display(
+    campaign_id: int,
+    db: Database,
+    limit: int = 6
+) -> list[str]:
+    """
+    Get recent user/assistant messages for display when loading game.
+
+    Args:
+        campaign_id: Campaign to load history for
+        db: Database connection
+        limit: Maximum number of messages to retrieve
+
+    Returns:
+        List of formatted message strings (alternating user/assistant)
+    """
+    log_repo = CampaignLogRepository(db)
+    logs = log_repo.get_by_campaign(campaign_id, limit=limit)
+
+    # Logs come in DESC order, reverse for chronological
+    logs.reverse()
+
+    messages = []
+    for log in logs:
+        if log.type == LogType.USER_MESSAGE:
+            messages.append(f"[bold cyan]You:[/bold cyan] {log.content}")
+        elif log.type == LogType.ASSISTANT_MESSAGE:
+            messages.append(f"[bold green]DM:[/bold green] {log.content}")
+        # Skip tool calls and results for display
+
+    return messages

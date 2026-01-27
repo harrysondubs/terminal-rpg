@@ -229,6 +229,7 @@ class GameState:
     inventory_weapons: list[tuple[Weapon, int]]  # (weapon, quantity)
     inventory_armor: list[tuple[Armor, int]]  # (armor, quantity)
     battle: Optional[Battle] = None
+    pending_level_up: bool = False
 
 
 # ===== Helper Functions =====

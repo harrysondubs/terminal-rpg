@@ -8,8 +8,12 @@ from typing import Dict
 from rich.console import Console
 from rich.panel import Panel
 
-from ....engines.dice import calculate_ability_modifier, roll_d20
+from ....engines.utils import calculate_ability_modifier
+from ....engines.xp_utils import get_level_from_xp
+from ....storage.database import Database
 from ....storage.models import GameState
+from ....storage.repositories import PlayerRepository
+from ....ui.game_display import animate_dice_roll
 
 
 console = Console()
@@ -53,7 +57,7 @@ TOOL_DEFINITION = {
 }
 
 
-def execute(ability_type: str, difficulty_class: int, context: str, game_state: GameState) -> str:
+def execute(ability_type: str, difficulty_class: int, context: str, game_state: GameState, db: Database, status=None) -> str:
     """
     Execute an ability check with interactive dice roll.
 
@@ -62,10 +66,14 @@ def execute(ability_type: str, difficulty_class: int, context: str, game_state: 
         difficulty_class: Target DC to meet or beat
         context: Description of what player is attempting
         game_state: Current game state
+        status: Optional Rich Status object to pause during interactive display
 
     Returns:
         Result message indicating success or failure
     """
+    # Pause the "DM is thinking..." spinner during interactive ability check
+    if status:
+        status.stop()
     player = game_state.player
     ability_type_enum = AbilityType(ability_type)
 
@@ -98,8 +106,8 @@ Press Enter to roll the d20..."""
     # Wait for player input
     input()
 
-    # Roll the dice
-    roll = roll_d20()
+    # Roll the dice with animation
+    roll = animate_dice_roll(sides=20, label="Rolling d20")
     total = roll + modifier
 
     # Determine success/failure (don't show DC to player)
@@ -118,6 +126,27 @@ Press Enter to roll the d20..."""
     console.print()
     console.print(Panel(result_display, border_style=result_color, title="Roll Result"))
     console.print()
+
+    # Award XP based on roll result (silent - no display)
+    old_level = player.level
+    old_xp = player.xp
+    xp_gained = roll if success else roll // 2
+    new_xp = old_xp + xp_gained
+    new_level = get_level_from_xp(new_xp)
+    
+    # Update XP and level in database and game state
+    player_repo = PlayerRepository(db)
+    player_repo.update_xp_and_level(player.id, new_xp, new_level)
+    player.xp = new_xp
+    player.level = new_level
+    
+    # Set flag if player leveled up
+    if new_level > old_level:
+        game_state.pending_level_up = True
+
+    # Resume the "DM is thinking..." spinner
+    if status:
+        status.start()
 
     # Return result to DM
     if success:

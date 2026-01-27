@@ -70,6 +70,31 @@ class CampaignRepository(BaseRepository):
         """Delete campaign (cascades to all related data)"""
         self._delete_by_id('campaigns', campaign_id)
 
+    def get_all_active_with_world_names(self) -> list[tuple[Campaign, str]]:
+        """
+        Fetch all campaigns with their world names for display in load menu.
+        Only returns campaigns where the player's HP is greater than 0 (alive).
+
+        Returns:
+            List of tuples (Campaign, world_name) ordered by last_save_at DESC
+        """
+        rows = self.db.conn.execute("""
+            SELECT c.*, w.name as world_name
+            FROM campaigns c
+            JOIN worlds w ON c.world_id = w.id
+            JOIN players p ON c.id = p.campaign_id
+            WHERE p.hp > 0
+            ORDER BY c.last_save_at DESC
+        """).fetchall()
+
+        result = []
+        for row in rows:
+            campaign = self._row_to_campaign(row)
+            world_name = row['world_name']
+            result.append((campaign, world_name))
+
+        return result
+
     def load_game_state(self, campaign_id: int) -> Optional[GameState]:
         """Load complete game state for a campaign"""
         # Import here to avoid circular imports
@@ -137,6 +162,35 @@ class CampaignRepository(BaseRepository):
             inventory_weapons=inventory_weapons,
             inventory_armor=inventory_armor
         )
+
+    def get_leaderboard(self, limit: int = 10) -> list[tuple[str, str, int, int, bool]]:
+        """
+        Get top campaigns ranked by player XP for the leaderboard.
+
+        Args:
+            limit: Maximum number of entries to return (default 10)
+
+        Returns:
+            List of tuples (campaign_name, player_name, level, xp, is_alive)
+            ordered by XP descending
+        """
+        rows = self.db.conn.execute("""
+            SELECT 
+                c.name as campaign_name,
+                p.name as player_name,
+                p.level,
+                p.xp,
+                CASE WHEN p.hp > 0 THEN 1 ELSE 0 END as is_alive
+            FROM campaigns c
+            JOIN players p ON c.id = p.campaign_id
+            ORDER BY p.xp DESC
+            LIMIT ?
+        """, (limit,)).fetchall()
+
+        return [
+            (row['campaign_name'], row['player_name'], row['level'], row['xp'], bool(row['is_alive']))
+            for row in rows
+        ]
 
     def _row_to_campaign(self, row: sqlite3.Row) -> Campaign:
         """Convert database row to Campaign dataclass"""

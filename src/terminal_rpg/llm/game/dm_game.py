@@ -1,23 +1,17 @@
 """
-Dungeon Master game loop using Claude API.
+Dungeon Master API interaction layer using Claude API.
+Handles message creation, tool execution, and response processing.
 """
 
 import json
 import logging
-import sys
 from typing import Optional
 
 from anthropic import APIError
-from rich.console import Console
-from rich.panel import Panel
 
 from ...storage.database import Database
 from ...storage.models import GameState
-from ...storage.repositories import CampaignRepository
 from ..claude_api import ClaudeModel, create_message
-
-
-logger = logging.getLogger(__name__)
 from .message_history import (
     reconstruct_message_history,
     save_assistant_message,
@@ -51,7 +45,7 @@ from .tools import (
     view_locations_execute,
 )
 
-console = Console()
+logger = logging.getLogger(__name__)
 
 # All available tools
 TOOLS = [
@@ -73,12 +67,13 @@ MAX_TOOL_ITERATIONS = 5  # Prevent infinite tool loops
 
 class DMGame:
     """
-    Manages the DM conversation loop with Claude.
+    Manages Claude API interactions and tool execution for the DM.
+    Pure API/tool layer with no UI or game loop logic.
     """
 
     def __init__(self, db: Database, campaign_id: int):
         """
-        Initialize DM game session.
+        Initialize DM API session.
 
         Args:
             db: Connected Database instance
@@ -87,165 +82,39 @@ class DMGame:
         self.db = db
         self.campaign_id = campaign_id
         self.game_state: Optional[GameState] = None
-        self.running = False
+        self.status = None
 
-    def start(self):
-        """Start the game loop."""
-        # Load game state
-        campaign_repo = CampaignRepository(self.db)
-        self.game_state = campaign_repo.load_game_state(self.campaign_id)
+    def get_response(self, user_input: str, game_state: GameState, status=None) -> tuple[str, Optional[str]]:
+        """
+        Get response from Claude for user input, handling tools automatically.
 
-        if not self.game_state:
-            console.print("[red]Error: Could not load game state[/red]")
-            return
+        Args:
+            user_input: User's message
+            game_state: Current game state
+            status: Optional Rich Status object to pause during interactive tools
 
-        # Display welcome
-        self._display_welcome()
-
-        # Main loop
-        self.running = True
-        while self.running:
-            try:
-                self._game_loop_iteration()
-            except KeyboardInterrupt:
-                console.print("\n[yellow]Game paused. Type 'quit' to exit or press Enter to continue.[/yellow]")
-                user_input = console.input("> ").strip().lower()
-                if user_input == 'quit':
-                    self.running = False
-            except Exception as e:
-                console.print(f"[red]Error: {e}[/red]")
-                console.print("[yellow]An error occurred. The game will continue.[/yellow]")
-
-    def _display_welcome(self):
-        """Display welcome message and current location."""
-        player = self.game_state.player
-        location = self.game_state.location
-
-        welcome = f"""[bold cyan]Welcome, {player.name}[/bold cyan]
-
-[bold]Current Location:[/bold] {location.name}
-{location.description}
-
-[dim]Type your actions or questions. Type 'quit' to exit.
-Quick commands: /inventory, /stats[/dim]"""
-
-        console.print(Panel(welcome, title=f"{self.game_state.world.name}", border_style="cyan"))
-
-    def _display_inventory(self):
-        """Display player's current inventory."""
-        from ...ui.display import display_player_inventory
-        display_player_inventory(self.game_state)
-
-    def _display_stats(self):
-        """Display player's current stats."""
-        from ...ui.display import display_player_stats
-        display_player_stats(self.game_state.player)
-
-    def _reload_modules(self):
-        """Reload game modules for hot-reload during development."""
-        from .utils import reload_game_modules
-        
-        console.print()
-        console.print("[yellow]🔄 Reloading game modules...[/yellow]")
-
-        try:
-            reloaded_count, components = reload_game_modules()
-
-            # Update global references with reloaded components
-            global TOOLS, view_inventory_execute, add_item_execute, add_weapon_execute, add_armor_execute
-            global remove_inventory_execute, change_location_execute, view_locations_execute, create_location_execute
-            global execute_gold, execute_hp, execute_ability_check
-            global reconstruct_message_history, save_assistant_message, save_tool_call, save_tool_results, save_user_message
-            global create_dm_system_prompt
-
-            TOOLS = components['TOOLS']
-            view_inventory_execute = components['view_inventory_execute']
-            add_item_execute = components['add_item_execute']
-            add_weapon_execute = components['add_weapon_execute']
-            add_armor_execute = components['add_armor_execute']
-            remove_inventory_execute = components['remove_inventory_execute']
-            change_location_execute = components['change_location_execute']
-            view_locations_execute = components['view_locations_execute']
-            create_location_execute = components['create_location_execute']
-            execute_gold = components['execute_gold']
-            execute_hp = components['execute_hp']
-            execute_ability_check = components['execute_ability_check']
-            reconstruct_message_history = components['reconstruct_message_history']
-            save_assistant_message = components['save_assistant_message']
-            save_tool_call = components['save_tool_call']
-            save_tool_results = components['save_tool_results']
-            save_user_message = components['save_user_message']
-            create_dm_system_prompt = components['create_dm_system_prompt']
-
-            console.print(f"[green]✓ Reloaded {reloaded_count} modules successfully![/green]")
-            console.print("[dim]Changes to tools, prompts, and game logic are now active.[/dim]")
-
-        except Exception as e:
-            console.print(f"[red]✗ Error reloading modules: {e}[/red]")
-            logger.error(f"Module reload failed: {e}", exc_info=True)
-
-    def _game_loop_iteration(self):
-        """Single iteration of game loop: get input, call API, handle response."""
-        # Get user input
-        console.print()
-        user_input = console.input("[bold cyan]>[/bold cyan] ").strip()
-
-        if not user_input:
-            return
-
-        if user_input.lower() in ['quit', 'exit']:
-            self.running = False
-            console.print("[cyan]Farewell, adventurer![/cyan]")
-            return
-
-        # Handle reload command
-        if user_input.lower() == '/reload':
-            self._reload_modules()
-            return
-
-        # Handle inventory command
-        if user_input.lower() == '/inventory':
-            self._display_inventory()
-            return
-
-        # Handle stats command
-        if user_input.lower() == '/stats':
-            self._display_stats()
-            return
+        Returns:
+            Tuple of (response_text, error_message)
+            - response_text: Final text response from Claude (empty string if error)
+            - error_message: Error message if request failed, None if successful
+        """
+        self.game_state = game_state
+        self.status = status
 
         # Save user message
         save_user_message(
             self.campaign_id,
-            self.game_state.world.id,
-            self.game_state.location.id,
+            game_state.world.id,
+            game_state.location.id,
             user_input,
             self.db
         )
 
-        # Get response from Claude (with tool handling)
-        with console.status("[bold green]The DM is thinking...", spinner="dots"):
-            response_text = self._get_dm_response(user_input)
-
-        # Display response
-        if response_text:
-            console.print()
-            console.print(Panel(response_text, border_style="green", title="Dungeon Master"))
-
-    def _get_dm_response(self, user_input: str) -> str:
-        """
-        Get response from Claude, handling tools automatically.
-
-        Args:
-            user_input: User's message
-
-        Returns:
-            Final text response from Claude
-        """
         # Reconstruct conversation history
         messages = reconstruct_message_history(self.campaign_id, self.db)
 
         # Generate system prompt
-        system_prompt = create_dm_system_prompt(self.game_state)
+        system_prompt = create_dm_system_prompt(game_state)
 
         # Call Claude API with tools
         iteration = 0
@@ -284,8 +153,7 @@ Quick commands: /inventory, /stats[/dim]"""
                 )
             except APIError as e:
                 logger.error(f"API Error: {e}")
-                console.print(f"[red]API Error: {e}[/red]")
-                return "I apologize, but I'm having trouble connecting right now. Please try again."
+                return "", f"API Error: {e}"
 
             # Check if response contains tool calls
             tool_use_blocks = [block for block in response.content if block.type == "tool_use"]
@@ -297,13 +165,13 @@ Quick commands: /inventory, /stats[/dim]"""
 
                 save_assistant_message(
                     self.campaign_id,
-                    self.game_state.world.id,
-                    self.game_state.location.id,
+                    game_state.world.id,
+                    game_state.location.id,
                     final_text,
                     self.db
                 )
 
-                return final_text
+                return final_text, None
 
             # Has tool calls - execute them
             # First, save the full response content (includes text + tool_use blocks)
@@ -327,8 +195,8 @@ Quick commands: /inventory, /stats[/dim]"""
 
             save_tool_call(
                 self.campaign_id,
-                self.game_state.world.id,
-                self.game_state.location.id,
+                game_state.world.id,
+                game_state.location.id,
                 response.id,
                 content_blocks,
                 self.db
@@ -337,7 +205,7 @@ Quick commands: /inventory, /stats[/dim]"""
             # Execute tools
             tool_results = []
             for tool_block in tool_use_blocks:
-                result = self._execute_tool(tool_block.name, tool_block.input)
+                result = self._execute_tool(tool_block.name, tool_block.input, self.status)
                 tool_results.append({
                     "type": "tool_result",
                     "tool_use_id": tool_block.id,
@@ -347,8 +215,8 @@ Quick commands: /inventory, /stats[/dim]"""
             # Save tool results
             save_tool_results(
                 self.campaign_id,
-                self.game_state.world.id,
-                self.game_state.location.id,
+                game_state.world.id,
+                game_state.location.id,
                 tool_results,
                 self.db
             )
@@ -366,15 +234,16 @@ Quick commands: /inventory, /stats[/dim]"""
             # Continue loop to get next response
 
         # If we hit max iterations, return error
-        return "I apologize, something went wrong with processing your request. Please try rephrasing."
+        return "", "Max tool iterations reached. Please try rephrasing your request."
 
-    def _execute_tool(self, tool_name: str, tool_input: dict) -> str:
+    def _execute_tool(self, tool_name: str, tool_input: dict, status=None) -> str:
         """
         Execute a tool and return the result.
 
         Args:
             tool_name: Name of tool to execute
             tool_input: Tool input parameters
+            status: Optional Rich Status object to pause during interactive tools
 
         Returns:
             Tool result as string
@@ -470,7 +339,9 @@ Quick commands: /inventory, /stats[/dim]"""
                     tool_input["ability_type"],
                     tool_input["difficulty_class"],
                     tool_input["context"],
-                    self.game_state
+                    self.game_state,
+                    self.db,
+                    status
                 )
 
             else:

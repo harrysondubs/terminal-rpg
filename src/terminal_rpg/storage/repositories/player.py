@@ -82,6 +82,34 @@ class PlayerRepository(BaseRepository):
         )
         self.db.conn.commit()
 
+    def update_xp_and_level(self, player_id: int, xp: int, level: int) -> None:
+        """Update player's XP and level atomically"""
+        self.db.conn.execute(
+            "UPDATE players SET xp = ?, level = ? WHERE id = ?",
+            (xp, level, player_id)
+        )
+        self.db.conn.commit()
+
+    def update_ability_score(self, player_id: int, ability: str, new_value: int) -> None:
+        """Update a specific ability score"""
+        valid_abilities = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma']
+        if ability not in valid_abilities:
+            raise ValueError(f"Invalid ability: {ability}. Must be one of {valid_abilities}")
+        
+        self.db.conn.execute(
+            f"UPDATE players SET {ability} = ? WHERE id = ?",
+            (new_value, player_id)
+        )
+        self.db.conn.commit()
+
+    def update_max_hp(self, player_id: int, max_hp: int) -> None:
+        """Update player's maximum HP"""
+        self.db.conn.execute(
+            "UPDATE players SET max_hp = ? WHERE id = ?",
+            (max_hp, player_id)
+        )
+        self.db.conn.commit()
+
     # Inventory management methods
 
     def add_item(self, player_id: int, item_id: int, quantity: int = 1) -> None:

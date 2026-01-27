@@ -5,6 +5,7 @@ Player gold adjustment tool for DM.
 from rich.console import Console
 from rich.panel import Panel
 
+from ....engines.xp_utils import get_level_from_xp
 from ....storage.database import Database
 from ....storage.models import GameState
 from ....storage.repositories import PlayerRepository
@@ -60,6 +61,22 @@ def execute(amount: int, game_state: GameState, db: Database) -> str:
     # Update game state
     old_gold = player.gold
     player.gold = new_gold
+
+    # Award XP for gold gained (1:1 ratio, only for positive amounts)
+    if amount > 0:
+        old_level = player.level
+        old_xp = player.xp
+        new_xp = old_xp + amount
+        new_level = get_level_from_xp(new_xp)
+        
+        # Update XP and level in database and game state
+        player_repo.update_xp_and_level(player.id, new_xp, new_level)
+        player.xp = new_xp
+        player.level = new_level
+        
+        # Set flag if player leveled up
+        if new_level > old_level:
+            game_state.pending_level_up = True
 
     # Display visual feedback to player
     console.print()
