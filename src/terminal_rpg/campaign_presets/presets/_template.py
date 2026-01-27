@@ -145,7 +145,7 @@ YOUR_PRESET_NAME = CampaignPreset(
             name="character_class_1",
             description="description_of_character_class_1",
             character_species="character_species_1",  # The race/species of this class
-            # Stats: Total should be around 70-75 for balanced gameplay
+            # Stats: Total should be around 60-70 for balanced gameplay
             # Distribute based on class role
             stats={
                 "strength": 10,  # Physical power (melee damage)
