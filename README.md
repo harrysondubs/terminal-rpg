@@ -163,18 +163,17 @@ The game creates these files automatically. They are .gitignored by default:
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## 👍 Acknowledgments
 
-- **Anthropic** for creating Claude, the AI that powers our dynamic Dungeon Master
-- **D&D 5e** for inspiration on game mechanics and the Open Gaming License
-- The Python community for amazing libraries like `rich`, `questionary`, and `anthropic`
-- All contributors who help make this project better!
+- **Anthropic Claude 4.5 Sonnet** for DMing
+- **D&D 5e** for inspiration on game mechanics and the (mostly) [Open Gaming License](https://media.wizards.com/2016/downloads/DND/SRD-OGL_V5.1.pdf)
+- The Python community for libraries like `rich` and `questionary`
 
 ## 📞 Support & Community
 
 - **Issues**: Found a bug? [Report it here](https://github.com/harrysondubs/terminal-rpg/issues)
-- **Discussions**: Have questions? [Start a discussion](https://github.com/harrysondubs/terminal-rpg/discussions)
 - **API Costs**: This game uses the Anthropic API. Monitor your usage at [console.anthropic.com](https://console.anthropic.com/)
+    - Future build-outs will include a token cost-tracker
 
 ## 🗺️ Roadmap
 
@@ -184,6 +183,7 @@ Future plans include:
 - [ ] Enhanced combat flow and spells
 - [ ] In-game image generation
 - [ ] Export adventures to PDF
+- [ ] Token-based cost-tracking
 
 ---
 
