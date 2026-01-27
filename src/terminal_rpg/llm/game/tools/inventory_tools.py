@@ -4,32 +4,27 @@ Player inventory management tools for DM.
 
 from ....storage.database import Database
 from ....storage.models import (
-    GameState,
-    Item,
-    Weapon,
     Armor,
-    Rarity,
-    WeaponType,
-    HandsRequired,
     ArmorType,
+    GameState,
+    HandsRequired,
+    Item,
+    Rarity,
+    Weapon,
+    WeaponType,
 )
 from ....storage.repositories import (
-    ItemRepository,
-    WeaponRepository,
     ArmorRepository,
+    ItemRepository,
     PlayerRepository,
+    WeaponRepository,
 )
-
 
 # ===== VIEW INVENTORY TOOL =====
 VIEW_INVENTORY_TOOL = {
     "name": "view_player_inventory",
     "description": "View the player's complete inventory including equipped items, weapons, armor, and consumables. Use this when the player asks about their inventory or when you need to check what items they have available.",
-    "input_schema": {
-        "type": "object",
-        "properties": {},
-        "required": []
-    }
+    "input_schema": {"type": "object", "properties": {}, "required": []},
 }
 
 
@@ -45,16 +40,13 @@ def view_inventory_execute(game_state: GameState) -> str:
     """
     player = game_state.player
 
-    lines = [
-        f"# {player.name}'s Inventory",
-        f"**Gold**: {player.gold}g",
-        "",
-        "## Equipped Weapons"
-    ]
+    lines = [f"# {player.name}'s Inventory", f"**Gold**: {player.gold}g", "", "## Equipped Weapons"]
 
     if game_state.equipped_weapons:
         for weapon in game_state.equipped_weapons:
-            lines.append(f"- **{weapon.name}** (Attack: +{weapon.attack}, {weapon.type.value}, {weapon.hands_required.value})")
+            lines.append(
+                f"- **{weapon.name}** (Attack: +{weapon.attack}, {weapon.type.value}, {weapon.hands_required.value})"
+            )
             lines.append(f"  _{weapon.description}_")
     else:
         lines.append("- None")
@@ -103,35 +95,37 @@ ADD_ITEM_TOOL = {
     "input_schema": {
         "type": "object",
         "properties": {
-            "name": {
-                "type": "string",
-                "description": "Name of the item"
-            },
+            "name": {"type": "string", "description": "Name of the item"},
             "description": {
                 "type": "string",
-                "description": "Description of the item and its effects"
+                "description": "Description of the item and its effects",
             },
             "rarity": {
                 "type": "string",
                 "enum": ["common", "rare", "legendary"],
-                "description": "Rarity level of the item"
+                "description": "Rarity level of the item",
             },
-            "value": {
-                "type": "integer",
-                "description": "Gold value of the item"
-            },
+            "value": {"type": "integer", "description": "Gold value of the item"},
             "quantity": {
                 "type": "integer",
                 "description": "Number of items to add (default 1)",
-                "default": 1
-            }
+                "default": 1,
+            },
         },
-        "required": ["name", "description", "rarity", "value"]
-    }
+        "required": ["name", "description", "rarity", "value"],
+    },
 }
 
 
-def add_item_execute(name: str, description: str, rarity: str, value: int, game_state: GameState, db: Database, quantity: int = 1) -> str:
+def add_item_execute(
+    name: str,
+    description: str,
+    rarity: str,
+    value: int,
+    game_state: GameState,
+    db: Database,
+    quantity: int = 1,
+) -> str:
     """
     Add a new item to player inventory.
 
@@ -179,7 +173,7 @@ def add_item_execute(name: str, description: str, rarity: str, value: int, game_
         name=name,
         description=description,
         rarity=rarity_enum,
-        value=value
+        value=value,
     )
 
     try:
@@ -201,45 +195,33 @@ ADD_WEAPON_TOOL = {
     "input_schema": {
         "type": "object",
         "properties": {
-            "name": {
-                "type": "string",
-                "description": "Name of the weapon"
-            },
-            "description": {
-                "type": "string",
-                "description": "Description of the weapon"
-            },
+            "name": {"type": "string", "description": "Name of the weapon"},
+            "description": {"type": "string", "description": "Description of the weapon"},
             "rarity": {
                 "type": "string",
                 "enum": ["common", "rare", "legendary"],
-                "description": "Rarity level of the weapon"
+                "description": "Rarity level of the weapon",
             },
             "type": {
                 "type": "string",
                 "enum": ["melee", "ranged"],
-                "description": "Weapon combat type"
+                "description": "Weapon combat type",
             },
             "hands_required": {
                 "type": "string",
                 "enum": ["one_handed", "two_handed"],
-                "description": "Number of hands needed to wield"
+                "description": "Number of hands needed to wield",
             },
-            "attack": {
-                "type": "integer",
-                "description": "Attack bonus the weapon provides"
-            },
-            "value": {
-                "type": "integer",
-                "description": "Gold value of the weapon"
-            },
+            "attack": {"type": "integer", "description": "Attack bonus the weapon provides"},
+            "value": {"type": "integer", "description": "Gold value of the weapon"},
             "quantity": {
                 "type": "integer",
                 "description": "Number of weapons to add (default 1)",
-                "default": 1
-            }
+                "default": 1,
+            },
         },
-        "required": ["name", "description", "rarity", "type", "hands_required", "attack", "value"]
-    }
+        "required": ["name", "description", "rarity", "type", "hands_required", "attack", "value"],
+    },
 }
 
 
@@ -253,7 +235,7 @@ def add_weapon_execute(
     value: int,
     game_state: GameState,
     db: Database,
-    quantity: int = 1
+    quantity: int = 1,
 ) -> str:
     """
     Add a new weapon to player inventory.
@@ -321,7 +303,7 @@ def add_weapon_execute(
         hands_required=hands_enum,
         attack=attack,
         rarity=rarity_enum,
-        value=value
+        value=value,
     )
 
     try:
@@ -343,40 +325,28 @@ ADD_ARMOR_TOOL = {
     "input_schema": {
         "type": "object",
         "properties": {
-            "name": {
-                "type": "string",
-                "description": "Name of the armor"
-            },
-            "description": {
-                "type": "string",
-                "description": "Description of the armor"
-            },
+            "name": {"type": "string", "description": "Name of the armor"},
+            "description": {"type": "string", "description": "Description of the armor"},
             "rarity": {
                 "type": "string",
                 "enum": ["common", "rare", "legendary"],
-                "description": "Rarity level of the armor"
+                "description": "Rarity level of the armor",
             },
             "type": {
                 "type": "string",
                 "enum": ["helmet", "shield", "chestplate", "boots", "leggings"],
-                "description": "Armor equipment slot type"
+                "description": "Armor equipment slot type",
             },
-            "defense": {
-                "type": "integer",
-                "description": "Defense bonus the armor provides"
-            },
-            "value": {
-                "type": "integer",
-                "description": "Gold value of the armor"
-            },
+            "defense": {"type": "integer", "description": "Defense bonus the armor provides"},
+            "value": {"type": "integer", "description": "Gold value of the armor"},
             "quantity": {
                 "type": "integer",
                 "description": "Number of armor pieces to add (default 1)",
-                "default": 1
-            }
+                "default": 1,
+            },
         },
-        "required": ["name", "description", "rarity", "type", "defense", "value"]
-    }
+        "required": ["name", "description", "rarity", "type", "defense", "value"],
+    },
 }
 
 
@@ -389,7 +359,7 @@ def add_armor_execute(
     value: int,
     game_state: GameState,
     db: Database,
-    quantity: int = 1
+    quantity: int = 1,
 ) -> str:
     """
     Add a new armor piece to player inventory.
@@ -450,7 +420,7 @@ def add_armor_execute(
         type=type_enum,
         defense=defense,
         rarity=rarity_enum,
-        value=value
+        value=value,
     )
 
     try:
@@ -475,29 +445,22 @@ REMOVE_INVENTORY_TOOL = {
             "type": {
                 "type": "string",
                 "enum": ["item", "weapon", "armor"],
-                "description": "Type of inventory entry to remove"
+                "description": "Type of inventory entry to remove",
             },
-            "name": {
-                "type": "string",
-                "description": "Name of the item/weapon/armor to remove"
-            },
+            "name": {"type": "string", "description": "Name of the item/weapon/armor to remove"},
             "quantity": {
                 "type": "integer",
                 "description": "Number to remove (default 1)",
-                "default": 1
-            }
+                "default": 1,
+            },
         },
-        "required": ["type", "name"]
-    }
+        "required": ["type", "name"],
+    },
 }
 
 
 def remove_inventory_execute(
-    type: str,
-    name: str,
-    game_state: GameState,
-    db: Database,
-    quantity: int = 1
+    type: str, name: str, game_state: GameState, db: Database, quantity: int = 1
 ) -> str:
     """
     Remove item/weapon/armor from player inventory.
@@ -549,14 +512,14 @@ def _remove_item(name: str, quantity: int, game_state: GameState, db: Database) 
     # Check if player has this item
     cursor = db.conn.execute(
         "SELECT quantity FROM player_items WHERE player_id = ? AND item_id = ?",
-        (game_state.player.id, target_item.id)
+        (game_state.player.id, target_item.id),
     )
     row = cursor.fetchone()
 
     if not row:
         return f"Warning: {game_state.player.name} does not have '{name}' in their inventory."
 
-    current_quantity = row['quantity']
+    current_quantity = row["quantity"]
 
     if quantity > current_quantity:
         return f"Warning: Cannot remove {quantity}x {name}. Player only has {current_quantity}x in inventory."
@@ -566,7 +529,7 @@ def _remove_item(name: str, quantity: int, game_state: GameState, db: Database) 
         # Remove entirely
         db.conn.execute(
             "DELETE FROM player_items WHERE player_id = ? AND item_id = ?",
-            (game_state.player.id, target_item.id)
+            (game_state.player.id, target_item.id),
         )
         db.conn.commit()
         return f"Successfully removed all {name} ({current_quantity}x) from {game_state.player.name}'s inventory."
@@ -575,7 +538,7 @@ def _remove_item(name: str, quantity: int, game_state: GameState, db: Database) 
         new_quantity = current_quantity - quantity
         db.conn.execute(
             "UPDATE player_items SET quantity = ? WHERE player_id = ? AND item_id = ?",
-            (new_quantity, game_state.player.id, target_item.id)
+            (new_quantity, game_state.player.id, target_item.id),
         )
         db.conn.commit()
         qty_text = f"{quantity}x " if quantity > 1 else ""
@@ -600,14 +563,14 @@ def _remove_weapon(name: str, quantity: int, game_state: GameState, db: Database
     # Check if player has this weapon
     cursor = db.conn.execute(
         "SELECT quantity FROM player_weapons WHERE player_id = ? AND weapon_id = ?",
-        (game_state.player.id, target_weapon.id)
+        (game_state.player.id, target_weapon.id),
     )
     row = cursor.fetchone()
 
     if not row:
         return f"Warning: {game_state.player.name} does not have '{name}' in their inventory."
 
-    current_quantity = row['quantity']
+    current_quantity = row["quantity"]
 
     if quantity > current_quantity:
         return f"Warning: Cannot remove {quantity}x {name}. Player only has {current_quantity}x in inventory."
@@ -617,7 +580,7 @@ def _remove_weapon(name: str, quantity: int, game_state: GameState, db: Database
         # Remove entirely
         db.conn.execute(
             "DELETE FROM player_weapons WHERE player_id = ? AND weapon_id = ?",
-            (game_state.player.id, target_weapon.id)
+            (game_state.player.id, target_weapon.id),
         )
         db.conn.commit()
         return f"Successfully removed all {name} ({current_quantity}x) from {game_state.player.name}'s inventory."
@@ -626,7 +589,7 @@ def _remove_weapon(name: str, quantity: int, game_state: GameState, db: Database
         new_quantity = current_quantity - quantity
         db.conn.execute(
             "UPDATE player_weapons SET quantity = ? WHERE player_id = ? AND weapon_id = ?",
-            (new_quantity, game_state.player.id, target_weapon.id)
+            (new_quantity, game_state.player.id, target_weapon.id),
         )
         db.conn.commit()
         qty_text = f"{quantity}x " if quantity > 1 else ""
@@ -651,14 +614,14 @@ def _remove_armor(name: str, quantity: int, game_state: GameState, db: Database)
     # Check if player has this armor
     cursor = db.conn.execute(
         "SELECT quantity FROM player_armor WHERE player_id = ? AND armor_id = ?",
-        (game_state.player.id, target_armor.id)
+        (game_state.player.id, target_armor.id),
     )
     row = cursor.fetchone()
 
     if not row:
         return f"Warning: {game_state.player.name} does not have '{name}' in their inventory."
 
-    current_quantity = row['quantity']
+    current_quantity = row["quantity"]
 
     if quantity > current_quantity:
         return f"Warning: Cannot remove {quantity}x {name}. Player only has {current_quantity}x in inventory."
@@ -668,7 +631,7 @@ def _remove_armor(name: str, quantity: int, game_state: GameState, db: Database)
         # Remove entirely
         db.conn.execute(
             "DELETE FROM player_armor WHERE player_id = ? AND armor_id = ?",
-            (game_state.player.id, target_armor.id)
+            (game_state.player.id, target_armor.id),
         )
         db.conn.commit()
         return f"Successfully removed all {name} ({current_quantity}x) from {game_state.player.name}'s inventory."
@@ -677,7 +640,7 @@ def _remove_armor(name: str, quantity: int, game_state: GameState, db: Database)
         new_quantity = current_quantity - quantity
         db.conn.execute(
             "UPDATE player_armor SET quantity = ? WHERE player_id = ? AND armor_id = ?",
-            (new_quantity, game_state.player.id, target_armor.id)
+            (new_quantity, game_state.player.id, target_armor.id),
         )
         db.conn.commit()
         qty_text = f"{quantity}x " if quantity > 1 else ""

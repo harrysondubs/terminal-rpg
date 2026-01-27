@@ -3,7 +3,6 @@ SQLite database connection management and schema creation.
 """
 
 import sqlite3
-from typing import Optional
 
 
 class Database:
@@ -13,7 +12,7 @@ class Database:
 
     def __init__(self, db_path="games.db"):
         self.db_path = db_path
-        self.conn: Optional[sqlite3.Connection] = None
+        self.conn: sqlite3.Connection | None = None
 
     def connect(self):
         """Open connection and configure SQLite"""
@@ -34,9 +33,8 @@ class Database:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Context manager exit with automatic rollback on error"""
-        if exc_type:
-            if self.conn:
-                self.conn.rollback()
+        if exc_type and self.conn:
+            self.conn.rollback()
         self.close()
 
     def create_schema(self):
@@ -47,16 +45,19 @@ class Database:
         cursor = self.conn.cursor()
 
         # Create tables
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS worlds (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
                 description TEXT NOT NULL,
                 created_at TEXT DEFAULT (datetime('now'))
             )
-        """)
+        """
+        )
 
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS campaigns (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
@@ -67,9 +68,11 @@ class Database:
                 FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE RESTRICT,
                 FOREIGN KEY (current_location_id) REFERENCES locations(id) ON DELETE SET NULL
             )
-        """)
+        """
+        )
 
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS players (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 campaign_id INTEGER NOT NULL,
@@ -91,9 +94,11 @@ class Database:
                 created_at TEXT DEFAULT (datetime('now')),
                 FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
             )
-        """)
+        """
+        )
 
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS items (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 world_id INTEGER NOT NULL,
@@ -105,9 +110,11 @@ class Database:
                 FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE RESTRICT,
                 FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
             )
-        """)
+        """
+        )
 
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS weapons (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 world_id INTEGER NOT NULL,
@@ -122,9 +129,11 @@ class Database:
                 FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE RESTRICT,
                 FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
             )
-        """)
+        """
+        )
 
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS armor (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 world_id INTEGER NOT NULL,
@@ -138,9 +147,11 @@ class Database:
                 FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE RESTRICT,
                 FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
             )
-        """)
+        """
+        )
 
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS player_items (
                 player_id INTEGER NOT NULL,
                 item_id INTEGER NOT NULL,
@@ -150,9 +161,11 @@ class Database:
                 FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE,
                 FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE
             )
-        """)
+        """
+        )
 
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS player_weapons (
                 player_id INTEGER NOT NULL,
                 weapon_id INTEGER NOT NULL,
@@ -163,9 +176,11 @@ class Database:
                 FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE,
                 FOREIGN KEY (weapon_id) REFERENCES weapons(id) ON DELETE CASCADE
             )
-        """)
+        """
+        )
 
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS player_armor (
                 player_id INTEGER NOT NULL,
                 armor_id INTEGER NOT NULL,
@@ -176,9 +191,11 @@ class Database:
                 FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE,
                 FOREIGN KEY (armor_id) REFERENCES armor(id) ON DELETE CASCADE
             )
-        """)
+        """
+        )
 
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS locations (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 world_id INTEGER NOT NULL,
@@ -189,9 +206,11 @@ class Database:
                 FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE RESTRICT,
                 FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
             )
-        """)
+        """
+        )
 
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS battles (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 world_id INTEGER NOT NULL,
@@ -202,9 +221,11 @@ class Database:
                 FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE RESTRICT,
                 FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
             )
-        """)
+        """
+        )
 
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS npcs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 world_id INTEGER NOT NULL,
@@ -224,9 +245,11 @@ class Database:
                 FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE,
                 FOREIGN KEY (battle_id) REFERENCES battles(id) ON DELETE CASCADE
             )
-        """)
+        """
+        )
 
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS campaign_logs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 campaign_id INTEGER NOT NULL,
@@ -241,11 +264,14 @@ class Database:
                 FOREIGN KEY (location_id) REFERENCES locations(id) ON DELETE RESTRICT,
                 FOREIGN KEY (battle_id) REFERENCES battles(id) ON DELETE SET NULL
             )
-        """)
+        """
+        )
 
         # Create indexes for performance
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_campaigns_world ON campaigns(world_id)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_campaigns_location ON campaigns(current_location_id)")
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_campaigns_location ON campaigns(current_location_id)"
+        )
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_players_campaign ON players(campaign_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_items_world ON items(world_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_items_campaign ON items(campaign_id)")
@@ -257,29 +283,47 @@ class Database:
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_npcs_campaign ON npcs(campaign_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_npcs_battle ON npcs(battle_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_locations_world ON locations(world_id)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_locations_campaign ON locations(campaign_id)")
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_locations_campaign ON locations(campaign_id)"
+        )
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_battles_world ON battles(world_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_battles_campaign ON battles(campaign_id)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_campaign_logs_campaign ON campaign_logs(campaign_id)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_campaign_logs_location ON campaign_logs(location_id)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_campaign_logs_battle ON campaign_logs(battle_id)")
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_campaign_logs_campaign ON campaign_logs(campaign_id)"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_campaign_logs_location ON campaign_logs(location_id)"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_campaign_logs_battle ON campaign_logs(battle_id)"
+        )
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_campaign_logs_type ON campaign_logs(type)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_player_items_player ON player_items(player_id)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_player_weapons_player ON player_weapons(player_id)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_player_armor_player ON player_armor(player_id)")
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_player_items_player ON player_items(player_id)"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_player_weapons_player ON player_weapons(player_id)"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_player_armor_player ON player_armor(player_id)"
+        )
 
         # Create unique constraints for locations
         # Prevent duplicate world-level locations (campaign_id IS NULL)
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE UNIQUE INDEX IF NOT EXISTS idx_locations_unique_world_level
             ON locations(world_id, name)
             WHERE campaign_id IS NULL
-        """)
+        """
+        )
         # Prevent duplicate campaign-specific locations
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE UNIQUE INDEX IF NOT EXISTS idx_locations_unique_campaign_level
             ON locations(world_id, campaign_id, name)
             WHERE campaign_id IS NOT NULL
-        """)
+        """
+        )
 
         self.conn.commit()

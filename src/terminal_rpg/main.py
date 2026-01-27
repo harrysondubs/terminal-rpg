@@ -5,6 +5,7 @@ Main game entry point that handles database initialization and menu flow.
 
 import logging
 import os
+
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -13,39 +14,35 @@ load_dotenv()
 # Set up logging (DEBUG level to file only, don't spam console)
 logging.basicConfig(
     level=logging.DEBUG,
-    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
-    handlers=[
-        logging.FileHandler('terminal_rpg_debug.log')
-    ]
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    handlers=[logging.FileHandler("terminal_rpg_debug.log")],
 )
 
+# ruff: noqa: E402
+from .engines.game import GameEngine
+from .engines.new_campaign import create_new_campaign_from_preset, get_available_presets
 from .storage.database import Database
 from .storage.models import Campaign, Player
-from .storage.repositories import WorldRepository, CampaignRepository
-from .engines.new_campaign import (
-    get_available_presets,
-    create_new_campaign_from_preset
-)
-from .engines.game import GameEngine
+from .storage.repositories import CampaignRepository, WorldRepository
 from .ui.menu_display import (
     console,
-    display_welcome,
-    display_preset_info,
     display_class_info_from_preset,
     display_game_start_summary,
+    display_leaderboard,
     display_location_summary,
+    display_preset_info,
     display_recent_messages,
-    display_leaderboard
+    display_welcome,
 )
 from .ui.prompts import (
-    show_start_menu,
-    select_preset_with_nav,
-    select_class_from_preset_with_nav,
-    get_campaign_name_with_nav,
-    get_character_name_with_nav,
-    get_character_description_with_nav,
     confirm_character_creation_with_nav,
-    select_saved_campaign
+    get_campaign_name_with_nav,
+    get_character_description_with_nav,
+    get_character_name_with_nav,
+    select_class_from_preset_with_nav,
+    select_preset_with_nav,
+    select_saved_campaign,
+    show_start_menu,
 )
 
 
@@ -73,7 +70,9 @@ def main():
             choice = show_start_menu()
 
             if choice == "exit":
-                console.print("\n[cyan]Farewell, adventurer! May your next journey be legendary.[/cyan]\n")
+                console.print(
+                    "\n[cyan]Farewell, adventurer! May your next journey be legendary.[/cyan]\n"
+                )
                 break
 
             elif choice == "new_game":
@@ -147,16 +146,16 @@ def run_new_game_flow(db: Database) -> tuple[Campaign, Player] | tuple[None, Non
 
     # State machine: step numbers allow forward and backward navigation
     current_step = 1
-    
+
     while True:
         # Step 1: Preset Selection
         if current_step == 1:
             result = select_preset_with_nav(presets)
-            
+
             if result == "cancel":
                 console.print("[yellow]Campaign creation cancelled.[/yellow]\n")
                 return None, None
-            
+
             selected_preset = result
             display_preset_info(selected_preset)
             current_step = 2
@@ -164,14 +163,14 @@ def run_new_game_flow(db: Database) -> tuple[Campaign, Player] | tuple[None, Non
         # Step 2: Class Selection
         elif current_step == 2:
             result = select_class_from_preset_with_nav(selected_preset)
-            
+
             if result == "cancel":
                 console.print("[yellow]Campaign creation cancelled.[/yellow]\n")
                 return None, None
             elif result == "back":
                 current_step = 1
                 continue
-            
+
             class_name, class_preset = result
             display_class_info_from_preset(class_name, class_preset)
             current_step = 3
@@ -179,53 +178,49 @@ def run_new_game_flow(db: Database) -> tuple[Campaign, Player] | tuple[None, Non
         # Step 3: Character Name
         elif current_step == 3:
             result = get_character_name_with_nav()
-            
+
             if result == "cancel":
                 console.print("[yellow]Campaign creation cancelled.[/yellow]\n")
                 return None, None
             elif result == "back":
                 current_step = 2
                 continue
-            
+
             player_name = result
             current_step = 4
 
         # Step 4: Campaign Name
         elif current_step == 4:
             result = get_campaign_name_with_nav()
-            
+
             if result == "cancel":
                 console.print("[yellow]Campaign creation cancelled.[/yellow]\n")
                 return None, None
             elif result == "back":
                 current_step = 3
                 continue
-            
+
             campaign_name = result
             current_step = 5
 
         # Step 5: Character Description
         elif current_step == 5:
             result = get_character_description_with_nav()
-            
+
             if result == "cancel":
                 console.print("[yellow]Campaign creation cancelled.[/yellow]\n")
                 return None, None
             elif result == "back":
                 current_step = 4
                 continue
-            
+
             player_description = result
             current_step = 6
 
         # Step 6: Confirmation
         elif current_step == 6:
-            result = confirm_character_creation_with_nav(
-                campaign_name,
-                player_name,
-                class_name
-            )
-            
+            result = confirm_character_creation_with_nav(campaign_name, player_name, class_name)
+
             if result == "cancel":
                 console.print("[yellow]Campaign creation cancelled.[/yellow]\n")
                 return None, None
@@ -240,12 +235,7 @@ def run_new_game_flow(db: Database) -> tuple[Campaign, Player] | tuple[None, Non
     try:
         with console.status("[bold green]Creating your adventure...", spinner="dots"):
             campaign, player = create_new_campaign_from_preset(
-                db,
-                selected_preset,
-                campaign_name,
-                player_name,
-                player_description,
-                class_preset
+                db, selected_preset, campaign_name, player_name, player_description, class_preset
             )
 
         console.print("[green]Campaign created successfully![/green]\n")
@@ -304,17 +294,13 @@ def run_load_game_flow(db: Database) -> Campaign | None:
 
     # 6. Display location summary
     console.print()
-    display_location_summary(
-        game_state.location,
-        game_state.world.name,
-        game_state.player.name
-    )
+    display_location_summary(game_state.location, game_state.world.name, game_state.player.name)
 
     # 7. Get and display recent messages for context
     recent_messages = get_recent_messages_for_display(
         selected_campaign.id,
         db,
-        limit=6  # Last 6 messages (3 exchanges)
+        limit=6,  # Last 6 messages (3 exchanges)
     )
 
     if recent_messages:

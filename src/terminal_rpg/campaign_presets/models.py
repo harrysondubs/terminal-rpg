@@ -4,12 +4,14 @@ Defines the structure for preset definitions including worlds, locations, equipm
 """
 
 from dataclasses import dataclass
-from ..storage.models import Rarity, WeaponType, HandsRequired, ArmorType, Disposition
+
+from ..storage.models import ArmorType, Disposition, HandsRequired, Rarity, WeaponType
 
 
 @dataclass
 class WorldDefinition:
     """Definition for a game world."""
+
     name: str
     description: str
 
@@ -17,6 +19,7 @@ class WorldDefinition:
 @dataclass
 class LocationDefinition:
     """Definition for a location within a world."""
+
     name: str
     description: str
 
@@ -24,6 +27,7 @@ class LocationDefinition:
 @dataclass
 class ItemDefinition:
     """Definition for a consumable item."""
+
     name: str
     description: str
     rarity: Rarity
@@ -33,6 +37,7 @@ class ItemDefinition:
 @dataclass
 class WeaponDefinition:
     """Definition for a weapon."""
+
     name: str
     description: str
     type: WeaponType
@@ -45,6 +50,7 @@ class WeaponDefinition:
 @dataclass
 class ArmorDefinition:
     """Definition for an armor piece."""
+
     name: str
     description: str
     type: ArmorType
@@ -56,6 +62,7 @@ class ArmorDefinition:
 @dataclass
 class NPCDefinition:
     """Definition for an NPC or enemy."""
+
     name: str
     character_class: str
     character_species: str
@@ -70,6 +77,7 @@ class NPCDefinition:
 @dataclass
 class CharacterClassPreset:
     """Character class preset with stats and equipment."""
+
     name: str
     description: str
     character_species: str
@@ -77,10 +85,10 @@ class CharacterClassPreset:
     base_hp: int
     starting_gold: int
     equipment_weapons: list[str]  # Weapon names to add to inventory
-    equipment_armor: list[str]    # Armor names to add to inventory
-    equipment_items: list[str]    # Item names to add to inventory
-    auto_equip_weapon: str        # Weapon name to auto-equip
-    auto_equip_armor: list[str]   # Armor names to auto-equip
+    equipment_armor: list[str]  # Armor names to add to inventory
+    equipment_items: list[str]  # Item names to add to inventory
+    auto_equip_weapon: str  # Weapon name to auto-equip
+    auto_equip_armor: list[str]  # Armor names to auto-equip
 
 
 @dataclass
@@ -89,13 +97,14 @@ class CampaignPreset:
     Complete campaign preset definition.
     Contains all data needed to create a new campaign including world, locations, equipment, and classes.
     """
-    id: str                                          # Unique identifier (e.g., "forgotten_realms")
-    display_name: str                                # Display name for UI (e.g., "The Forgotten Realms")
-    world: WorldDefinition                           # World definition
-    locations: list[LocationDefinition]              # Locations in this world
-    items: list[ItemDefinition]                      # Consumable items
-    weapons: list[WeaponDefinition]                  # Weapons
-    armor: list[ArmorDefinition]                     # Armor pieces
-    npcs: list[NPCDefinition]                        # NPCs and enemies
+
+    id: str  # Unique identifier (e.g., "forgotten_realms")
+    display_name: str  # Display name for UI (e.g., "The Forgotten Realms")
+    world: WorldDefinition  # World definition
+    locations: list[LocationDefinition]  # Locations in this world
+    items: list[ItemDefinition]  # Consumable items
+    weapons: list[WeaponDefinition]  # Weapons
+    armor: list[ArmorDefinition]  # Armor pieces
+    npcs: list[NPCDefinition]  # NPCs and enemies
     character_classes: dict[str, CharacterClassPreset]  # Available character classes
-    starting_location_name: str                      # Name of starting location
+    starting_location_name: str  # Name of starting location

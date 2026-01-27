@@ -6,7 +6,6 @@ from ....storage.database import Database
 from ....storage.models import GameState
 from ....storage.repositories import CampaignRepository, LocationRepository
 
-
 # ===== CHANGE LOCATION TOOL =====
 CHANGE_LOCATION_TOOL = {
     "name": "change_location",
@@ -16,11 +15,11 @@ CHANGE_LOCATION_TOOL = {
         "properties": {
             "location_name": {
                 "type": "string",
-                "description": "The exact name of the location to move to"
+                "description": "The exact name of the location to move to",
             }
         },
-        "required": ["location_name"]
-    }
+        "required": ["location_name"],
+    },
 }
 
 
@@ -44,10 +43,7 @@ def change_location_execute(location_name: str, game_state: GameState, db: Datab
         return f"Warning: The player is already at {game_state.location.name}. Cannot move to the current location."
 
     # Find location by name in current world
-    locations = location_repo.get_by_world(
-        game_state.world.id,
-        campaign_id=game_state.campaign.id
-    )
+    locations = location_repo.get_by_world(game_state.world.id, campaign_id=game_state.campaign.id)
 
     target_location = None
     for loc in locations:
@@ -71,11 +67,7 @@ def change_location_execute(location_name: str, game_state: GameState, db: Datab
 VIEW_LOCATIONS_TOOL = {
     "name": "view_locations",
     "description": "View all available locations in the current world. Use this to see where the player can travel.",
-    "input_schema": {
-        "type": "object",
-        "properties": {},
-        "required": []
-    }
+    "input_schema": {"type": "object", "properties": {}, "required": []},
 }
 
 
@@ -93,10 +85,7 @@ def view_locations_execute(game_state: GameState, db: Database) -> str:
     location_repo = LocationRepository(db)
 
     # Get all locations for current world and campaign
-    locations = location_repo.get_by_world(
-        game_state.world.id,
-        campaign_id=game_state.campaign.id
-    )
+    locations = location_repo.get_by_world(game_state.world.id, campaign_id=game_state.campaign.id)
 
     if not locations:
         return f"No locations found in {game_state.world.name}."
@@ -124,21 +113,17 @@ CREATE_LOCATION_TOOL = {
     "input_schema": {
         "type": "object",
         "properties": {
-            "location_name": {
-                "type": "string",
-                "description": "Name of the new location"
-            },
-            "description": {
-                "type": "string",
-                "description": "Description of the new location"
-            }
+            "location_name": {"type": "string", "description": "Name of the new location"},
+            "description": {"type": "string", "description": "Description of the new location"},
         },
-        "required": ["location_name", "description"]
-    }
+        "required": ["location_name", "description"],
+    },
 }
 
 
-def create_location_execute(location_name: str, description: str, game_state: GameState, db: Database) -> str:
+def create_location_execute(
+    location_name: str, description: str, game_state: GameState, db: Database
+) -> str:
     """
     Create a new location.
 
@@ -167,8 +152,7 @@ def create_location_execute(location_name: str, description: str, game_state: Ga
 
     # Check if location with this name already exists
     existing_locations = location_repo.get_by_world(
-        game_state.world.id,
-        campaign_id=game_state.campaign.id
+        game_state.world.id, campaign_id=game_state.campaign.id
     )
 
     for loc in existing_locations:
@@ -180,7 +164,7 @@ def create_location_execute(location_name: str, description: str, game_state: Ga
         world_id=game_state.world.id,
         name=location_name,
         description=description,
-        campaign_id=game_state.campaign.id
+        campaign_id=game_state.campaign.id,
     )
 
     try:

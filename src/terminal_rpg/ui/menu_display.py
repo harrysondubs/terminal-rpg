@@ -26,11 +26,13 @@ def display_welcome() -> None:
 ╚════════════════════════════════════════════╝
     """
 
-    console.print(Panel(
-        Text(welcome_art, style="bold cyan", justify="center"),
-        border_style="bright_magenta",
-        padding=(1, 2)
-    ))
+    console.print(
+        Panel(
+            Text(welcome_art, style="bold cyan", justify="center"),
+            border_style="bright_magenta",
+            padding=(1, 2),
+        )
+    )
     console.print()
 
 
@@ -42,15 +44,17 @@ def display_preset_info(preset: CampaignPreset) -> None:
         preset: CampaignPreset to display
     """
     console.print()
-    console.print(Panel(
-        preset.world.description,
-        title=f"[bold yellow]🌍 {preset.display_name}[/bold yellow]",
-        border_style="yellow",
-        padding=(1, 2)
-    ))
+    console.print(
+        Panel(
+            preset.world.description,
+            title=f"[bold yellow]🌍 {preset.display_name}[/bold yellow]",
+            border_style="yellow",
+            padding=(1, 2),
+        )
+    )
 
-    console.print(f"\n[bold cyan]Available Classes:[/bold cyan]")
-    for class_name in preset.character_classes.keys():
+    console.print("\n[bold cyan]Available Classes:[/bold cyan]")
+    for class_name in preset.character_classes:
         console.print(f"  • {class_name}")
     console.print()
 
@@ -63,12 +67,14 @@ def display_world_info(world: World) -> None:
         world: World object to display
     """
     console.print()
-    console.print(Panel(
-        world.description,
-        title=f"[bold yellow]🌍 {world.name}[/bold yellow]",
-        border_style="yellow",
-        padding=(1, 2)
-    ))
+    console.print(
+        Panel(
+            world.description,
+            title=f"[bold yellow]🌍 {world.name}[/bold yellow]",
+            border_style="yellow",
+            padding=(1, 2),
+        )
+    )
     console.print()
 
 
@@ -83,32 +89,36 @@ def display_class_info_from_preset(class_name: str, class_preset: CharacterClass
     console.print()
 
     # Class description
-    console.print(Panel(
-        class_preset.description,
-        title=f"[bold cyan]{class_name}[/bold cyan] ({class_preset.character_species})",
-        border_style="cyan",
-        padding=(1, 2)
-    ))
+    console.print(
+        Panel(
+            class_preset.description,
+            title=f"[bold cyan]{class_name}[/bold cyan] ({class_preset.character_species})",
+            border_style="cyan",
+            padding=(1, 2),
+        )
+    )
 
     # Stats table
     stats_table = Table(title="Ability Scores", show_header=True, header_style="bold magenta")
     stats_table.add_column("Attribute", style="cyan", width=15)
     stats_table.add_column("Score", justify="center", style="green", width=10)
 
-    stats_table.add_row("Strength", str(class_preset.stats['strength']))
-    stats_table.add_row("Dexterity", str(class_preset.stats['dexterity']))
-    stats_table.add_row("Constitution", str(class_preset.stats['constitution']))
-    stats_table.add_row("Intelligence", str(class_preset.stats['intelligence']))
-    stats_table.add_row("Wisdom", str(class_preset.stats['wisdom']))
-    stats_table.add_row("Charisma", str(class_preset.stats['charisma']))
+    stats_table.add_row("Strength", str(class_preset.stats["strength"]))
+    stats_table.add_row("Dexterity", str(class_preset.stats["dexterity"]))
+    stats_table.add_row("Constitution", str(class_preset.stats["constitution"]))
+    stats_table.add_row("Intelligence", str(class_preset.stats["intelligence"]))
+    stats_table.add_row("Wisdom", str(class_preset.stats["wisdom"]))
+    stats_table.add_row("Charisma", str(class_preset.stats["charisma"]))
 
     console.print(stats_table)
     console.print()
 
     # HP and Gold
-    constitution = class_preset.stats['constitution']
+    constitution = class_preset.stats["constitution"]
     max_hp = class_preset.base_hp + (constitution * 2)
-    console.print(f"[bold green]HP:[/bold green] {max_hp}  |  [bold yellow]Gold:[/bold yellow] {class_preset.starting_gold}")
+    console.print(
+        f"[bold green]HP:[/bold green] {max_hp}  |  [bold yellow]Gold:[/bold yellow] {class_preset.starting_gold}"
+    )
     console.print()
 
     # Equipment
@@ -119,11 +129,7 @@ def display_class_info_from_preset(class_name: str, class_preset: CharacterClass
     console.print()
 
 
-def display_game_start_summary(
-    campaign: Campaign,
-    player: Player,
-    world: World
-) -> None:
+def display_game_start_summary(campaign: Campaign, player: Player, world: World) -> None:
     """
     Display final summary before starting game.
     Shows character sheet and equipment.
@@ -138,14 +144,16 @@ def display_game_start_summary(
     console.print()
 
     # Character sheet header
-    console.print(Panel(
-        f"[bold white]{player.name}[/bold white]\n"
-        f"[cyan]{player.character_class}[/cyan] ({player.character_species})\n"
-        f"Level {player.level}",
-        title="[bold green]✨ Character Created ✨[/bold green]",
-        border_style="green",
-        padding=(1, 2)
-    ))
+    console.print(
+        Panel(
+            f"[bold white]{player.name}[/bold white]\n"
+            f"[cyan]{player.character_class}[/cyan] ({player.character_species})\n"
+            f"Level {player.level}",
+            title="[bold green]✨ Character Created ✨[/bold green]",
+            border_style="green",
+            padding=(1, 2),
+        )
+    )
 
     # Campaign info
     console.print(f"\n[bold yellow]Campaign:[/bold yellow] {campaign.name}")
@@ -172,12 +180,14 @@ def display_game_start_summary(
     console.print()
 
     # Adventure message
-    console.print(Panel(
-        "[bold white]Your adventure begins now...[/bold white]\n\n"
-        "[italic]Press Ctrl+C to exit at any time[/italic]",
-        border_style="bright_magenta",
-        padding=(1, 2)
-    ))
+    console.print(
+        Panel(
+            "[bold white]Your adventure begins now...[/bold white]\n\n"
+            "[italic]Press Ctrl+C to exit at any time[/italic]",
+            border_style="bright_magenta",
+            padding=(1, 2),
+        )
+    )
     console.print()
     console.print("=" * 70, style="bold green")
     console.print()
@@ -200,11 +210,7 @@ def display_location_summary(location, world_name: str, player_name: str) -> Non
 [dim]Type your actions or questions. Type '/quit' to exit.
 Quick commands: /inventory, /stats[/dim]"""
 
-    console.print(Panel(
-        welcome,
-        title=f"{world_name}",
-        border_style="cyan"
-    ))
+    console.print(Panel(welcome, title=f"{world_name}", border_style="cyan"))
 
 
 def display_recent_messages(messages: list[str], max_messages: int = 3) -> None:
@@ -223,11 +229,7 @@ def display_recent_messages(messages: list[str], max_messages: int = 3) -> None:
     console.print()
 
     for msg in messages[-max_messages:]:
-        console.print(Panel(
-            msg,
-            border_style="dim",
-            padding=(0, 2)
-        ))
+        console.print(Panel(msg, border_style="dim", padding=(0, 2)))
 
     console.print()
 
@@ -240,11 +242,13 @@ def display_leaderboard(leaderboard_data: list[tuple[str, str, int, int, bool]])
         leaderboard_data: List of tuples (campaign_name, player_name, level, xp, is_alive)
     """
     console.print()
-    console.print(Panel(
-        "[bold white]🏆 TOP ADVENTURERS 🏆[/bold white]",
-        border_style="bright_yellow",
-        padding=(1, 2)
-    ))
+    console.print(
+        Panel(
+            "[bold white]🏆 TOP ADVENTURERS 🏆[/bold white]",
+            border_style="bright_yellow",
+            padding=(1, 2),
+        )
+    )
     console.print()
 
     if not leaderboard_data:
@@ -256,7 +260,7 @@ def display_leaderboard(leaderboard_data: list[tuple[str, str, int, int, bool]])
         title="Campaign Leaderboard",
         show_header=True,
         header_style="bold bright_yellow",
-        border_style="yellow"
+        border_style="yellow",
     )
 
     table.add_column("Rank", justify="center", style="bright_yellow", width=6)
@@ -269,14 +273,14 @@ def display_leaderboard(leaderboard_data: list[tuple[str, str, int, int, bool]])
     for rank, (campaign_name, player_name, level, xp, is_alive) in enumerate(leaderboard_data, 1):
         status = "✅ Alive" if is_alive else "💀 Dead"
         status_style = "green" if is_alive else "red"
-        
+
         table.add_row(
             str(rank),
             campaign_name,
             player_name,
             str(level),
             f"{xp:,}",
-            f"[{status_style}]{status}[/{status_style}]"
+            f"[{status_style}]{status}[/{status_style}]",
         )
 
     console.print(table)

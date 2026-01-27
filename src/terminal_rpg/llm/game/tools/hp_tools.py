@@ -4,12 +4,10 @@ Player HP adjustment tool for DM.
 
 from rich.console import Console
 from rich.panel import Panel
-from rich.progress import BarColumn, Progress
 
 from ....storage.database import Database
 from ....storage.models import GameState
 from ....storage.repositories import PlayerRepository
-
 
 console = Console()
 
@@ -23,11 +21,11 @@ TOOL_DEFINITION = {
         "properties": {
             "amount": {
                 "type": "integer",
-                "description": "HP to add (positive for healing) or remove (negative for damage)"
+                "description": "HP to add (positive for healing) or remove (negative for damage)",
             }
         },
-        "required": ["amount"]
-    }
+        "required": ["amount"],
+    },
 }
 
 

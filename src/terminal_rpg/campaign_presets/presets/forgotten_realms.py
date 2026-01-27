@@ -3,23 +3,22 @@ The Forgotten Realms campaign preset.
 A classic fantasy world with diverse locations, equipment, and character classes.
 """
 
-from ..models import (
-    CampaignPreset,
-    WorldDefinition,
-    LocationDefinition,
-    ItemDefinition,
-    WeaponDefinition,
-    ArmorDefinition,
-    CharacterClassPreset,
-)
-from ..registry import PresetRegistry
 from ...storage.models import (
+    ArmorType,
+    HandsRequired,
     Rarity,
     WeaponType,
-    HandsRequired,
-    ArmorType,
 )
-
+from ..models import (
+    ArmorDefinition,
+    CampaignPreset,
+    CharacterClassPreset,
+    ItemDefinition,
+    LocationDefinition,
+    WeaponDefinition,
+    WorldDefinition,
+)
+from ..registry import PresetRegistry
 
 # Define the Forgotten Realms preset
 FORGOTTEN_REALMS_PRESET = CampaignPreset(
@@ -28,44 +27,44 @@ FORGOTTEN_REALMS_PRESET = CampaignPreset(
     world=WorldDefinition(
         name="The Forgotten Realms",
         description="A vast fantasy world shrouded in mystery and ancient magic. "
-                    "Brave adventurers explore forgotten dungeons, battle fearsome creatures, "
-                    "and uncover legendary treasures. Will you become a hero of legend?"
+        "Brave adventurers explore forgotten dungeons, battle fearsome creatures, "
+        "and uncover legendary treasures. Will you become a hero of legend?",
     ),
     locations=[
         LocationDefinition(
             name="The Prancing Pony Inn",
             description="A warm and welcoming tavern with a crackling fireplace. "
-                        "The smell of roasted meat and fresh bread fills the air. "
-                        "Adventurers gather here to share tales, find companions, and hear rumors of treasure. "
-                        "The innkeeper, a jovial halfling named Baldo, greets you with a wide smile."
+            "The smell of roasted meat and fresh bread fills the air. "
+            "Adventurers gather here to share tales, find companions, and hear rumors of treasure. "
+            "The innkeeper, a jovial halfling named Baldo, greets you with a wide smile.",
         ),
         LocationDefinition(
             name="Whispering Woods",
             description="Ancient trees tower above you, their leaves rustling with secrets. "
-                        "Dappled sunlight filters through the canopy, illuminating a winding path. "
-                        "You hear the distant calls of birds and the occasional snap of a twig. "
-                        "This forest is known to harbor both friendly creatures and lurking dangers."
+            "Dappled sunlight filters through the canopy, illuminating a winding path. "
+            "You hear the distant calls of birds and the occasional snap of a twig. "
+            "This forest is known to harbor both friendly creatures and lurking dangers.",
         ),
         LocationDefinition(
             name="Ruins of Shadowkeep",
             description="The crumbling remains of an ancient fortress loom before you. "
-                        "Dark stone walls are covered in creeping vines and mysterious runes. "
-                        "A sense of foreboding hangs in the air. Local legends speak of untold riches "
-                        "hidden within, guarded by creatures that should have died long ago."
+            "Dark stone walls are covered in creeping vines and mysterious runes. "
+            "A sense of foreboding hangs in the air. Local legends speak of untold riches "
+            "hidden within, guarded by creatures that should have died long ago.",
         ),
         LocationDefinition(
             name="Crystal Caverns",
             description="Luminescent crystals jut from the cavern walls, casting an ethereal blue glow. "
-                        "The sound of dripping water echoes through the chambers. "
-                        "These caves are said to be touched by ancient magic, and those who enter "
-                        "sometimes emerge changed, for better or worse."
+            "The sound of dripping water echoes through the chambers. "
+            "These caves are said to be touched by ancient magic, and those who enter "
+            "sometimes emerge changed, for better or worse.",
         ),
         LocationDefinition(
             name="Millhaven Village",
             description="A quaint village nestled in a peaceful valley. "
-                        "Farmers tend their fields, blacksmiths hammer at their forges, "
-                        "and children play in the town square. The villagers are friendly but cautious, "
-                        "having learned to be wary of strangers after recent goblin raids."
+            "Farmers tend their fields, blacksmiths hammer at their forges, "
+            "and children play in the town square. The villagers are friendly but cautious, "
+            "having learned to be wary of strangers after recent goblin raids.",
         ),
     ],
     items=[
@@ -74,7 +73,7 @@ FORGOTTEN_REALMS_PRESET = CampaignPreset(
             name="Minor Health Potion",
             description="A small vial of crimson liquid. Restores 25 HP when consumed.",
             rarity=Rarity.COMMON,
-            value=15
+            value=15,
         ),
     ],
     weapons=[
@@ -86,7 +85,7 @@ FORGOTTEN_REALMS_PRESET = CampaignPreset(
             hands_required=HandsRequired.ONE_HANDED,
             attack=12,
             rarity=Rarity.COMMON,
-            value=50
+            value=50,
         ),
         WeaponDefinition(
             name="Battle Axe",
@@ -95,7 +94,7 @@ FORGOTTEN_REALMS_PRESET = CampaignPreset(
             hands_required=HandsRequired.TWO_HANDED,
             attack=18,
             rarity=Rarity.COMMON,
-            value=75
+            value=75,
         ),
         # Thief and Bard weapons
         WeaponDefinition(
@@ -105,7 +104,7 @@ FORGOTTEN_REALMS_PRESET = CampaignPreset(
             hands_required=HandsRequired.ONE_HANDED,
             attack=5,
             rarity=Rarity.COMMON,
-            value=10
+            value=10,
         ),
         WeaponDefinition(
             name="Wooden Bow",
@@ -114,7 +113,7 @@ FORGOTTEN_REALMS_PRESET = CampaignPreset(
             hands_required=HandsRequired.TWO_HANDED,
             attack=10,
             rarity=Rarity.COMMON,
-            value=40
+            value=40,
         ),
     ],
     armor=[
@@ -125,7 +124,7 @@ FORGOTTEN_REALMS_PRESET = CampaignPreset(
             type=ArmorType.CHESTPLATE,
             defense=5,
             rarity=Rarity.COMMON,
-            value=40
+            value=40,
         ),
         # Fighter armor
         ArmorDefinition(
@@ -134,7 +133,7 @@ FORGOTTEN_REALMS_PRESET = CampaignPreset(
             type=ArmorType.HELMET,
             defense=8,
             rarity=Rarity.RARE,
-            value=100
+            value=100,
         ),
         # Thief armor
         ArmorDefinition(
@@ -143,7 +142,7 @@ FORGOTTEN_REALMS_PRESET = CampaignPreset(
             type=ArmorType.BOOTS,
             defense=2,
             rarity=Rarity.COMMON,
-            value=15
+            value=15,
         ),
         # Bard armor
         ArmorDefinition(
@@ -152,7 +151,7 @@ FORGOTTEN_REALMS_PRESET = CampaignPreset(
             type=ArmorType.HELMET,
             defense=2,
             rarity=Rarity.COMMON,
-            value=15
+            value=15,
         ),
     ],
     npcs=[
@@ -170,7 +169,7 @@ FORGOTTEN_REALMS_PRESET = CampaignPreset(
                 "constitution": 15,
                 "intelligence": 8,
                 "wisdom": 10,
-                "charisma": 9
+                "charisma": 9,
             },
             base_hp=50,
             starting_gold=100,
@@ -178,7 +177,7 @@ FORGOTTEN_REALMS_PRESET = CampaignPreset(
             equipment_armor=["Leather Armor", "Steel Helmet"],
             equipment_items=["Minor Health Potion"],
             auto_equip_weapon="Iron Sword",
-            auto_equip_armor=["Leather Armor", "Steel Helmet"]
+            auto_equip_armor=["Leather Armor", "Steel Helmet"],
         ),
         "Thief": CharacterClassPreset(
             name="Thief",
@@ -190,7 +189,7 @@ FORGOTTEN_REALMS_PRESET = CampaignPreset(
                 "constitution": 12,
                 "intelligence": 11,
                 "wisdom": 12,
-                "charisma": 14
+                "charisma": 14,
             },
             base_hp=40,
             starting_gold=75,
@@ -198,7 +197,7 @@ FORGOTTEN_REALMS_PRESET = CampaignPreset(
             equipment_armor=["Leather Armor", "Leather Boots"],
             equipment_items=["Minor Health Potion"],
             auto_equip_weapon="Rusty Dagger",
-            auto_equip_armor=["Leather Armor", "Leather Boots"]
+            auto_equip_armor=["Leather Armor", "Leather Boots"],
         ),
         "Bard": CharacterClassPreset(
             name="Bard",
@@ -210,7 +209,7 @@ FORGOTTEN_REALMS_PRESET = CampaignPreset(
                 "constitution": 11,
                 "intelligence": 14,
                 "wisdom": 12,
-                "charisma": 16
+                "charisma": 16,
             },
             base_hp=35,
             starting_gold=80,
@@ -218,10 +217,10 @@ FORGOTTEN_REALMS_PRESET = CampaignPreset(
             equipment_armor=["Leather Armor", "Leather Cap"],
             equipment_items=["Minor Health Potion"],
             auto_equip_weapon="Rusty Dagger",
-            auto_equip_armor=["Leather Armor", "Leather Cap"]
+            auto_equip_armor=["Leather Armor", "Leather Cap"],
         ),
     },
-    starting_location_name="The Prancing Pony Inn"
+    starting_location_name="The Prancing Pony Inn",
 )
 
 # Register the preset

@@ -4,21 +4,15 @@ Message history management for Claude API conversations.
 
 import json
 import logging
-from typing import Optional
 
 from ...storage.database import Database
 from ...storage.models import CampaignLog, LogType
 from ...storage.repositories import CampaignLogRepository
 
-
 logger = logging.getLogger(__name__)
 
 
-def reconstruct_message_history(
-    campaign_id: int,
-    db: Database,
-    limit: int = 50
-) -> list[dict]:
+def reconstruct_message_history(campaign_id: int, db: Database, limit: int = 50) -> list[dict]:
     """
     Reconstruct Claude API message format from campaign logs.
 
@@ -38,7 +32,7 @@ def reconstruct_message_history(
 
     messages = []
     pending_tool_call_index = None  # Track index of last tool_call message
-    pending_tool_use_ids = None     # Track expected tool_use IDs
+    pending_tool_use_ids = None  # Track expected tool_use IDs
 
     for log in logs:
         if log.type == LogType.USER_MESSAGE:
@@ -48,10 +42,7 @@ def reconstruct_message_history(
                 pending_tool_call_index = None
                 pending_tool_use_ids = None
 
-            messages.append({
-                "role": "user",
-                "content": log.content
-            })
+            messages.append({"role": "user", "content": log.content})
 
         elif log.type == LogType.ASSISTANT_MESSAGE:
             # If we have a pending tool_call without matching result, remove it
@@ -60,10 +51,7 @@ def reconstruct_message_history(
                 pending_tool_call_index = None
                 pending_tool_use_ids = None
 
-            messages.append({
-                "role": "assistant",
-                "content": log.content
-            })
+            messages.append({"role": "assistant", "content": log.content})
 
         elif log.type == LogType.TOOL_CALL:
             # If we have a pending tool_call without matching result, remove it
@@ -77,14 +65,10 @@ def reconstruct_message_history(
             # Store this message and its expected tool_use IDs
             pending_tool_call_index = len(messages)
             pending_tool_use_ids = {
-                block["id"] for block in content_blocks
-                if block.get("type") == "tool_use"
+                block["id"] for block in content_blocks if block.get("type") == "tool_use"
             }
 
-            messages.append({
-                "role": "assistant",
-                "content": content_blocks
-            })
+            messages.append({"role": "assistant", "content": content_blocks})
 
         elif log.type == LogType.TOOL_RESULT:
             # Parse tool result data
@@ -106,16 +90,15 @@ def reconstruct_message_history(
                 continue
 
             # Valid match - add tool_result and clear pending state
-            messages.append({
-                "role": "user",
-                "content": data["tool_results"]
-            })
+            messages.append({"role": "user", "content": data["tool_results"]})
             pending_tool_call_index = None
             pending_tool_use_ids = None
 
     # If we end with a pending tool_call without result, remove it
     if pending_tool_call_index is not None:
-        logger.warning(f"Removing incomplete tool_call at end of history (index {pending_tool_call_index})")
+        logger.warning(
+            f"Removing incomplete tool_call at end of history (index {pending_tool_call_index})"
+        )
         messages.pop(pending_tool_call_index)
 
     # Debug log the reconstructed messages
@@ -133,9 +116,13 @@ def reconstruct_message_history(
                     if block_type == "text":
                         logger.debug(f"      [{j}] text: {block.get('text', '')[:50]}...")
                     elif block_type == "tool_use":
-                        logger.debug(f"      [{j}] tool_use: {block.get('name')} (id: {block.get('id')})")
+                        logger.debug(
+                            f"      [{j}] tool_use: {block.get('name')} (id: {block.get('id')})"
+                        )
                     elif block_type == "tool_result":
-                        logger.debug(f"      [{j}] tool_result: (tool_use_id: {block.get('tool_use_id')})")
+                        logger.debug(
+                            f"      [{j}] tool_result: (tool_use_id: {block.get('tool_use_id')})"
+                        )
 
     return messages
 
@@ -146,18 +133,20 @@ def save_user_message(
     location_id: int,
     content: str,
     db: Database,
-    battle_id: Optional[int] = None
+    battle_id: int | None = None,
 ) -> CampaignLog:
     """Save user message to campaign logs."""
     log_repo = CampaignLogRepository(db)
-    return log_repo.create(CampaignLog(
-        campaign_id=campaign_id,
-        world_id=world_id,
-        location_id=location_id,
-        battle_id=battle_id,
-        type=LogType.USER_MESSAGE,
-        content=content
-    ))
+    return log_repo.create(
+        CampaignLog(
+            campaign_id=campaign_id,
+            world_id=world_id,
+            location_id=location_id,
+            battle_id=battle_id,
+            type=LogType.USER_MESSAGE,
+            content=content,
+        )
+    )
 
 
 def save_assistant_message(
@@ -166,18 +155,20 @@ def save_assistant_message(
     location_id: int,
     content: str,
     db: Database,
-    battle_id: Optional[int] = None
+    battle_id: int | None = None,
 ) -> CampaignLog:
     """Save assistant message to campaign logs."""
     log_repo = CampaignLogRepository(db)
-    return log_repo.create(CampaignLog(
-        campaign_id=campaign_id,
-        world_id=world_id,
-        location_id=location_id,
-        battle_id=battle_id,
-        type=LogType.ASSISTANT_MESSAGE,
-        content=content
-    ))
+    return log_repo.create(
+        CampaignLog(
+            campaign_id=campaign_id,
+            world_id=world_id,
+            location_id=location_id,
+            battle_id=battle_id,
+            type=LogType.ASSISTANT_MESSAGE,
+            content=content,
+        )
+    )
 
 
 def save_tool_call(
@@ -187,24 +178,23 @@ def save_tool_call(
     message_id: str,
     tool_calls: list[dict],
     db: Database,
-    battle_id: Optional[int] = None
+    battle_id: int | None = None,
 ) -> CampaignLog:
     """Save tool call to campaign logs."""
     log_repo = CampaignLogRepository(db)
 
-    content = json.dumps({
-        "message_id": message_id,
-        "tool_calls": tool_calls
-    })
+    content = json.dumps({"message_id": message_id, "tool_calls": tool_calls})
 
-    return log_repo.create(CampaignLog(
-        campaign_id=campaign_id,
-        world_id=world_id,
-        location_id=location_id,
-        battle_id=battle_id,
-        type=LogType.TOOL_CALL,
-        content=content
-    ))
+    return log_repo.create(
+        CampaignLog(
+            campaign_id=campaign_id,
+            world_id=world_id,
+            location_id=location_id,
+            battle_id=battle_id,
+            type=LogType.TOOL_CALL,
+            content=content,
+        )
+    )
 
 
 def save_tool_results(
@@ -213,30 +203,26 @@ def save_tool_results(
     location_id: int,
     tool_results: list[dict],
     db: Database,
-    battle_id: Optional[int] = None
+    battle_id: int | None = None,
 ) -> CampaignLog:
     """Save tool results to campaign logs."""
     log_repo = CampaignLogRepository(db)
 
-    content = json.dumps({
-        "tool_results": tool_results
-    })
+    content = json.dumps({"tool_results": tool_results})
 
-    return log_repo.create(CampaignLog(
-        campaign_id=campaign_id,
-        world_id=world_id,
-        location_id=location_id,
-        battle_id=battle_id,
-        type=LogType.TOOL_RESULT,
-        content=content
-    ))
+    return log_repo.create(
+        CampaignLog(
+            campaign_id=campaign_id,
+            world_id=world_id,
+            location_id=location_id,
+            battle_id=battle_id,
+            type=LogType.TOOL_RESULT,
+            content=content,
+        )
+    )
 
 
-def get_recent_messages_for_display(
-    campaign_id: int,
-    db: Database,
-    limit: int = 6
-) -> list[str]:
+def get_recent_messages_for_display(campaign_id: int, db: Database, limit: int = 6) -> list[str]:
     """
     Get recent user/assistant messages for display when loading game.
 

@@ -4,30 +4,30 @@ Handles idempotent loading of worlds, locations, equipment, and NPCs.
 """
 
 from ..storage.database import Database
-from ..storage.repositories import (
-    WorldRepository,
-    LocationRepository,
-    ItemRepository,
-    WeaponRepository,
-    ArmorRepository,
-    NPCRepository,
-)
 from ..storage.models import (
-    World,
-    Location,
-    Item,
-    Weapon,
-    Armor,
     NPC,
+    Armor,
+    Item,
+    Location,
+    Weapon,
+    World,
+)
+from ..storage.repositories import (
+    ArmorRepository,
+    ItemRepository,
+    LocationRepository,
+    NPCRepository,
+    WeaponRepository,
+    WorldRepository,
 )
 from .models import (
-    CampaignPreset,
-    WorldDefinition,
-    LocationDefinition,
-    ItemDefinition,
-    WeaponDefinition,
     ArmorDefinition,
+    CampaignPreset,
+    ItemDefinition,
+    LocationDefinition,
     NPCDefinition,
+    WeaponDefinition,
+    WorldDefinition,
 )
 
 
@@ -60,12 +60,7 @@ class PresetLoader:
         self._ensure_locations(world_id, preset.locations)
 
         # 3. Ensure equipment exists
-        self._ensure_equipment(
-            world_id,
-            preset.items,
-            preset.weapons,
-            preset.armor
-        )
+        self._ensure_equipment(world_id, preset.items, preset.weapons, preset.armor)
 
         # 4. Ensure NPCs exist
         self._ensure_npcs(world_id, preset.npcs)
@@ -91,10 +86,7 @@ class PresetLoader:
                 return world.id
 
         # Create new world
-        world = world_repo.create(World(
-            name=world_def.name,
-            description=world_def.description
-        ))
+        world = world_repo.create(World(name=world_def.name, description=world_def.description))
 
         return world.id
 
@@ -115,18 +107,16 @@ class PresetLoader:
         # Insert new locations
         for loc_def in locations:
             if loc_def.name not in existing_names:
-                location_repo.create(Location(
-                    world_id=world_id,
-                    name=loc_def.name,
-                    description=loc_def.description
-                ))
+                location_repo.create(
+                    Location(world_id=world_id, name=loc_def.name, description=loc_def.description)
+                )
 
     def _ensure_equipment(
         self,
         world_id: int,
         items: list[ItemDefinition],
         weapons: list[WeaponDefinition],
-        armor: list[ArmorDefinition]
+        armor: list[ArmorDefinition],
     ) -> None:
         """
         Insert equipment if it doesn't already exist.
@@ -144,13 +134,15 @@ class PresetLoader:
 
         for item_def in items:
             if item_def.name not in existing_item_names:
-                item_repo.create(Item(
-                    world_id=world_id,
-                    name=item_def.name,
-                    description=item_def.description,
-                    rarity=item_def.rarity,
-                    value=item_def.value
-                ))
+                item_repo.create(
+                    Item(
+                        world_id=world_id,
+                        name=item_def.name,
+                        description=item_def.description,
+                        rarity=item_def.rarity,
+                        value=item_def.value,
+                    )
+                )
 
         # Handle weapons
         weapon_repo = WeaponRepository(self.db)
@@ -159,16 +151,18 @@ class PresetLoader:
 
         for weapon_def in weapons:
             if weapon_def.name not in existing_weapon_names:
-                weapon_repo.create(Weapon(
-                    world_id=world_id,
-                    name=weapon_def.name,
-                    description=weapon_def.description,
-                    type=weapon_def.type,
-                    hands_required=weapon_def.hands_required,
-                    attack=weapon_def.attack,
-                    rarity=weapon_def.rarity,
-                    value=weapon_def.value
-                ))
+                weapon_repo.create(
+                    Weapon(
+                        world_id=world_id,
+                        name=weapon_def.name,
+                        description=weapon_def.description,
+                        type=weapon_def.type,
+                        hands_required=weapon_def.hands_required,
+                        attack=weapon_def.attack,
+                        rarity=weapon_def.rarity,
+                        value=weapon_def.value,
+                    )
+                )
 
         # Handle armor
         armor_repo = ArmorRepository(self.db)
@@ -177,15 +171,17 @@ class PresetLoader:
 
         for armor_def in armor:
             if armor_def.name not in existing_armor_names:
-                armor_repo.create(Armor(
-                    world_id=world_id,
-                    name=armor_def.name,
-                    description=armor_def.description,
-                    type=armor_def.type,
-                    defense=armor_def.defense,
-                    rarity=armor_def.rarity,
-                    value=armor_def.value
-                ))
+                armor_repo.create(
+                    Armor(
+                        world_id=world_id,
+                        name=armor_def.name,
+                        description=armor_def.description,
+                        type=armor_def.type,
+                        defense=armor_def.defense,
+                        rarity=armor_def.rarity,
+                        value=armor_def.value,
+                    )
+                )
 
     def _ensure_npcs(self, world_id: int, npcs: list[NPCDefinition]) -> None:
         """
@@ -204,15 +200,17 @@ class PresetLoader:
         # Insert new NPCs
         for npc_def in npcs:
             if npc_def.name not in existing_npc_names:
-                npc_repo.create(NPC(
-                    world_id=world_id,
-                    name=npc_def.name,
-                    character_class=npc_def.character_class,
-                    character_species=npc_def.character_species,
-                    hp=npc_def.hp,
-                    max_hp=npc_def.max_hp,
-                    level=npc_def.level,
-                    xp=npc_def.xp,
-                    gold=npc_def.gold,
-                    disposition=npc_def.disposition
-                ))
+                npc_repo.create(
+                    NPC(
+                        world_id=world_id,
+                        name=npc_def.name,
+                        character_class=npc_def.character_class,
+                        character_species=npc_def.character_species,
+                        hp=npc_def.hp,
+                        max_hp=npc_def.max_hp,
+                        level=npc_def.level,
+                        xp=npc_def.xp,
+                        gold=npc_def.gold,
+                        disposition=npc_def.disposition,
+                    )
+                )

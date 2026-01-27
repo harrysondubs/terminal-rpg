@@ -3,31 +3,30 @@ Campaign preset system for Terminal RPG.
 Provides extensible preset definitions for worlds, equipment, and character classes.
 """
 
+# Import all preset modules to trigger registration
+from . import presets  # noqa: F401
+from .loader import PresetLoader
 from .models import (
-    CampaignPreset,
-    WorldDefinition,
-    LocationDefinition,
-    ItemDefinition,
-    WeaponDefinition,
     ArmorDefinition,
+    CampaignPreset,
+    CharacterClassPreset,
+    ItemDefinition,
+    LocationDefinition,
     NPCDefinition,
-    CharacterClassPreset
+    WeaponDefinition,
+    WorldDefinition,
 )
 from .registry import PresetRegistry
-from .loader import PresetLoader
-
-# Import all preset modules to trigger registration
-from . import presets
 
 __all__ = [
-    'CampaignPreset',
-    'WorldDefinition',
-    'LocationDefinition',
-    'ItemDefinition',
-    'WeaponDefinition',
-    'ArmorDefinition',
-    'NPCDefinition',
-    'CharacterClassPreset',
-    'PresetRegistry',
-    'PresetLoader',
+    "CampaignPreset",
+    "WorldDefinition",
+    "LocationDefinition",
+    "ItemDefinition",
+    "WeaponDefinition",
+    "ArmorDefinition",
+    "NPCDefinition",
+    "CharacterClassPreset",
+    "PresetRegistry",
+    "PresetLoader",
 ]

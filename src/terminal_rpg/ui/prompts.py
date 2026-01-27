@@ -2,10 +2,12 @@
 Questionary interactions for user input.
 """
 
-import questionary
 from typing import Literal
-from ..storage.models import World, Campaign
+
+import questionary
+
 from ..campaign_presets import CampaignPreset, CharacterClassPreset
+from ..storage.models import Campaign, World
 
 # Navigation constants
 BACK = "← Back"
@@ -19,16 +21,10 @@ def show_start_menu() -> str:
     Returns:
         One of: "new_game", "load_game", "leaderboard", "exit"
     """
-    choices = [
-        "New Game",
-        "Load Game",
-        "Leaderboard",
-        "Exit"
-    ]
+    choices = ["New Game", "Load Game", "Leaderboard", "Exit"]
 
     answer = questionary.select(
-        "Welcome to Terminal RPG. Select an option below to continue:",
-        choices=choices
+        "Welcome to Terminal RPG. Select an option below to continue:", choices=choices
     ).ask()
 
     # Handle cancellation
@@ -40,7 +36,7 @@ def show_start_menu() -> str:
         "New Game": "new_game",
         "Load Game": "load_game",
         "Leaderboard": "leaderboard",
-        "Exit": "exit"
+        "Exit": "exit",
     }
 
     return mapping.get(answer, "exit")
@@ -60,10 +56,7 @@ def select_world(worlds: list[World]) -> World | None:
     choices = [world.name for world in worlds]
     choices.append("Create Your Own")
 
-    answer = questionary.select(
-        "Select your world:",
-        choices=choices
-    ).ask()
+    answer = questionary.select("Select your world:", choices=choices).ask()
 
     # Handle cancellation
     if answer is None:
@@ -94,10 +87,7 @@ def select_class(classes: dict[str, dict]) -> tuple[str, dict] | None:
     # Build choices with class names
     choices = list(classes.keys())
 
-    answer = questionary.select(
-        "Select your character class:",
-        choices=choices
-    ).ask()
+    answer = questionary.select("Select your character class:", choices=choices).ask()
 
     # Handle cancellation
     if answer is None:
@@ -116,7 +106,7 @@ def get_campaign_name() -> str | None:
     """
     return questionary.text(
         "Enter a name for your campaign:",
-        validate=lambda text: len(text) > 0 and len(text) <= 100 or "Name must be 1-100 characters"
+        validate=lambda text: len(text) > 0 and len(text) <= 100 or "Name must be 1-100 characters",
     ).ask()
 
 
@@ -129,7 +119,7 @@ def get_character_name() -> str | None:
     """
     return questionary.text(
         "Enter your character's name:",
-        validate=lambda text: len(text) > 0 and len(text) <= 50 or "Name must be 1-50 characters"
+        validate=lambda text: len(text) > 0 and len(text) <= 50 or "Name must be 1-50 characters",
     ).ask()
 
 
@@ -143,7 +133,9 @@ def get_character_description() -> str | None:
     return questionary.text(
         "Describe your character (appearance, background, personality):",
         multiline=False,  # Set to False for better terminal compatibility
-        validate=lambda text: len(text) > 0 and len(text) <= 500 or "Description must be 1-500 characters"
+        validate=lambda text: len(text) > 0
+        and len(text) <= 500
+        or "Description must be 1-500 characters",
     ).ask()
 
 
@@ -159,10 +151,7 @@ def select_preset(presets: list[CampaignPreset]) -> CampaignPreset | None:
     """
     choices = [preset.display_name for preset in presets]
 
-    answer = questionary.select(
-        "Select a campaign preset:",
-        choices=choices
-    ).ask()
+    answer = questionary.select("Select a campaign preset:", choices=choices).ask()
 
     if answer is None:
         return None
@@ -187,10 +176,7 @@ def select_class_from_preset(preset: CampaignPreset) -> tuple[str, CharacterClas
     """
     choices = list(preset.character_classes.keys())
 
-    answer = questionary.select(
-        f"Select your character class:",
-        choices=choices
-    ).ask()
+    answer = questionary.select("Select your character class:", choices=choices).ask()
 
     if answer is None:
         return None
@@ -239,10 +225,7 @@ def select_saved_campaign(campaigns_with_worlds: list[tuple[Campaign, str]]) -> 
         choice_text = f"{campaign.name} | World: {world_name} | Last Saved: {last_save_str}"
         choices.append(choice_text)
 
-    answer = questionary.select(
-        "Select a saved game to load:",
-        choices=choices
-    ).ask()
+    answer = questionary.select("Select a saved game to load:", choices=choices).ask()
 
     # Handle cancellation
     if answer is None:
@@ -258,7 +241,9 @@ def select_saved_campaign(campaigns_with_worlds: list[tuple[Campaign, str]]) -> 
 # Navigation-aware prompts for character creation flow
 
 
-def select_preset_with_nav(presets: list[CampaignPreset]) -> CampaignPreset | Literal["back", "cancel"]:
+def select_preset_with_nav(
+    presets: list[CampaignPreset],
+) -> CampaignPreset | Literal["back", "cancel"]:
     """
     Display campaign preset selection menu with back/cancel navigation.
 
@@ -272,10 +257,7 @@ def select_preset_with_nav(presets: list[CampaignPreset]) -> CampaignPreset | Li
     choices.append(questionary.Separator())
     choices.append(CANCEL)
 
-    answer = questionary.select(
-        "Step 1/6: Select a campaign preset:",
-        choices=choices
-    ).ask()
+    answer = questionary.select("Step 1/6: Select a campaign preset:", choices=choices).ask()
 
     if answer is None or answer == CANCEL:
         return "cancel"
@@ -288,7 +270,9 @@ def select_preset_with_nav(presets: list[CampaignPreset]) -> CampaignPreset | Li
     return "cancel"
 
 
-def select_class_from_preset_with_nav(preset: CampaignPreset) -> tuple[str, CharacterClassPreset] | Literal["back", "cancel"]:
+def select_class_from_preset_with_nav(
+    preset: CampaignPreset,
+) -> tuple[str, CharacterClassPreset] | Literal["back", "cancel"]:
     """
     Display class selection menu with back/cancel navigation.
 
@@ -302,10 +286,7 @@ def select_class_from_preset_with_nav(preset: CampaignPreset) -> tuple[str, Char
     choices.append(questionary.Separator())
     choices.extend([BACK, CANCEL])
 
-    answer = questionary.select(
-        "Step 2/6: Select your character class:",
-        choices=choices
-    ).ask()
+    answer = questionary.select("Step 2/6: Select your character class:", choices=choices).ask()
 
     if answer is None or answer == CANCEL:
         return "cancel"
@@ -325,13 +306,15 @@ def get_character_name_with_nav() -> str | Literal["back", "cancel"]:
     try:
         answer = questionary.text(
             "Step 3/6: Enter your character's name (1-50 characters, or '/back' to return):",
-            validate=lambda text: (len(text) > 0 and len(text) <= 50) or text.lower() == '/back' or "Name must be 1-50 characters"
+            validate=lambda text: (len(text) > 0 and len(text) <= 50)
+            or text.lower() == "/back"
+            or "Name must be 1-50 characters",
         ).ask()
 
         if answer is None:
             return "cancel"
-        
-        if answer.lower() == '/back':
+
+        if answer.lower() == "/back":
             return "back"
 
         return answer
@@ -349,13 +332,15 @@ def get_campaign_name_with_nav() -> str | Literal["back", "cancel"]:
     try:
         answer = questionary.text(
             "Step 4/6: Enter a name for your campaign (1-100 characters, or '/back' to return):",
-            validate=lambda text: (len(text) > 0 and len(text) <= 100) or text.lower() == '/back' or "Name must be 1-100 characters"
+            validate=lambda text: (len(text) > 0 and len(text) <= 100)
+            or text.lower() == "/back"
+            or "Name must be 1-100 characters",
         ).ask()
 
         if answer is None:
             return "cancel"
-        
-        if answer.lower() == '/back':
+
+        if answer.lower() == "/back":
             return "back"
 
         return answer
@@ -374,13 +359,15 @@ def get_character_description_with_nav() -> str | Literal["back", "cancel"]:
         answer = questionary.text(
             "Step 5/6: Describe your character - appearance, background, personality (1-500 characters, or '/back' to return):",
             multiline=False,
-            validate=lambda text: (len(text) > 0 and len(text) <= 500) or text.lower() == '/back' or "Description must be 1-500 characters"
+            validate=lambda text: (len(text) > 0 and len(text) <= 500)
+            or text.lower() == "/back"
+            or "Description must be 1-500 characters",
         ).ask()
 
         if answer is None:
             return "cancel"
-        
-        if answer.lower() == '/back':
+
+        if answer.lower() == "/back":
             return "back"
 
         return answer
@@ -389,9 +376,7 @@ def get_character_description_with_nav() -> str | Literal["back", "cancel"]:
 
 
 def confirm_character_creation_with_nav(
-    campaign_name: str,
-    player_name: str,
-    class_name: str
+    campaign_name: str, player_name: str, class_name: str
 ) -> Literal["confirm", "back", "cancel"]:
     """
     Confirm character creation with back/cancel navigation.
@@ -404,21 +389,16 @@ def confirm_character_creation_with_nav(
     Returns:
         "confirm", "back", or "cancel"
     """
-    choices = [
-        "✓ Confirm and Create",
-        questionary.Separator(),
-        BACK,
-        CANCEL
-    ]
+    choices = ["✓ Confirm and Create", questionary.Separator(), BACK, CANCEL]
 
     answer = questionary.select(
         f"Step 6/6: Create campaign '{campaign_name}' with {player_name} the {class_name}?",
-        choices=choices
+        choices=choices,
     ).ask()
 
     if answer is None or answer == CANCEL:
         return "cancel"
     if answer == BACK:
         return "back"
-    
+
     return "confirm"

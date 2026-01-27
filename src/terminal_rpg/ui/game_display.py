@@ -3,13 +3,13 @@ Game-specific UI display and input handling.
 Handles all console I/O for the game loop.
 """
 
-import time
 import random
-from typing import Optional
+import time
+
 from rich.console import Console
+from rich.live import Live
 from rich.markdown import Markdown
 from rich.panel import Panel
-from rich.live import Live
 from rich.text import Text
 
 from ..storage.models import GameState
@@ -50,11 +50,7 @@ class GameDisplay:
 [dim]Type your actions or questions. Type '/quit' to exit.
 Quick commands: /inventory, /stats[/dim]"""
 
-        self.console.print(Panel(
-            welcome,
-            title=f"{game_state.world.name}",
-            border_style="cyan"
-        ))
+        self.console.print(Panel(welcome, title=f"{game_state.world.name}", border_style="cyan"))
 
     def get_user_input(self) -> str:
         """
@@ -75,11 +71,9 @@ Quick commands: /inventory, /stats[/dim]"""
         """
         if response_text:
             self.console.print()
-            self.console.print(Panel(
-                Markdown(response_text),
-                border_style="green",
-                title="Dungeon Master"
-            ))
+            self.console.print(
+                Panel(Markdown(response_text), border_style="green", title="Dungeon Master")
+            )
 
     def display_thinking_status(self):
         """
@@ -88,10 +82,7 @@ Quick commands: /inventory, /stats[/dim]"""
         Returns:
             Rich status context manager
         """
-        return self.console.status(
-            "[bold green]The DM is thinking...",
-            spinner="dots"
-        )
+        return self.console.status("[bold green]The DM is thinking...", spinner="dots")
 
     def display_farewell(self, player_name: str) -> None:
         """
@@ -127,6 +118,7 @@ Quick commands: /inventory, /stats[/dim]"""
             game_state: Current game state
         """
         from .character_display import display_player_inventory
+
         display_player_inventory(game_state)
 
     def display_stats(self, game_state: GameState) -> None:
@@ -137,6 +129,7 @@ Quick commands: /inventory, /stats[/dim]"""
             game_state: Current game state
         """
         from .character_display import display_player_stats
+
         display_player_stats(game_state.player)
 
     def display_continue_message(self) -> None:
@@ -155,16 +148,15 @@ Quick commands: /inventory, /stats[/dim]"""
     def display_level_up(self, player, new_level: int) -> str:
         """
         Display level-up prompt and get ability choice from player.
-        
+
         Args:
             player: Player object with current stats
             new_level: The new level the player has reached
-            
+
         Returns:
             Chosen ability name (e.g., 'strength', 'dexterity')
         """
-        from ..storage.models import Player
-        
+
         # Display congratulations
         congrats_msg = f"""[bold green]🎉 LEVEL UP! 🎉[/bold green]
 
@@ -189,37 +181,46 @@ You may increase one ability score by +1."""
         ability_display = "[bold]Current Ability Scores:[/bold]\n\n"
         for ability, score in abilities.items():
             from ..engines.utils import calculate_ability_modifier
+
             modifier = calculate_ability_modifier(score)
             modifier_str = f"+{modifier}" if modifier >= 0 else str(modifier)
-            ability_display += f"  • [cyan]{ability.capitalize()}:[/cyan] {score} (modifier: {modifier_str})\n"
+            ability_display += (
+                f"  • [cyan]{ability.capitalize()}:[/cyan] {score} (modifier: {modifier_str})\n"
+            )
 
         self.console.print(Panel(ability_display, border_style="cyan"))
 
         # Loop until valid choice is confirmed
         while True:
             self.console.print()
-            self.console.print("[bold yellow]Which ability would you like to increase?[/bold yellow]")
-            self.console.print("[dim]Choose from: Strength, Dexterity, Constitution, Intelligence, Wisdom, Charisma[/dim]")
+            self.console.print(
+                "[bold yellow]Which ability would you like to increase?[/bold yellow]"
+            )
+            self.console.print(
+                "[dim]Choose from: Strength, Dexterity, Constitution, Intelligence, Wisdom, Charisma[/dim]"
+            )
             self.console.print()
-            
+
             choice = self.console.input("[bold cyan]>[/bold cyan] ").strip().lower()
-            
+
             if choice not in abilities:
                 self.console.print("[red]Invalid choice. Please choose a valid ability.[/red]")
                 continue
-            
+
             # Show confirmation
             old_value = abilities[choice]
             new_value = old_value + 1
-            
+
             self.console.print()
             confirm_msg = f"Increase [bold cyan]{choice.capitalize()}[/bold cyan] from [yellow]{old_value}[/yellow] to [green]{new_value}[/green]?"
             self.console.print(confirm_msg)
-            self.console.print("[dim](Type 'confirm' to accept, or 'back' to choose a different ability)[/dim]")
+            self.console.print(
+                "[dim](Type 'confirm' to accept, or 'back' to choose a different ability)[/dim]"
+            )
             self.console.print()
-            
+
             confirm = self.console.input("[bold cyan]>[/bold cyan] ").strip().lower()
-            
+
             if confirm == "confirm":
                 return choice
             elif confirm == "back":
@@ -232,30 +233,38 @@ You may increase one ability score by +1."""
 def animate_dice_roll(sides: int = 20, label: str = "Rolling") -> int:
     """
     Display an animated dice roll that starts fast and slows down.
-    
+
     Creates suspense by showing random numbers rapidly at first,
     then gradually slowing down before revealing the final result.
-    
+
     Args:
         sides: Number of sides on the die (default: 20 for d20)
         label: Label to display during the roll (default: "Rolling")
-    
+
     Returns:
         The final dice roll result (1 to sides)
     """
     # Determine the final result first
     final_roll = random.randint(1, sides)
-    
+
     # Animation parameters: start fast, end slow
     # delays in seconds for each frame
     frame_delays = [
-        0.05, 0.05, 0.05, 0.05,  # Fast start
-        0.08, 0.08, 0.08,         # Getting slower
-        0.12, 0.12,               # Slower
-        0.18, 0.18,               # Even slower
-        0.25, 0.30                # Final slow rolls
+        0.05,
+        0.05,
+        0.05,
+        0.05,  # Fast start
+        0.08,
+        0.08,
+        0.08,  # Getting slower
+        0.12,
+        0.12,  # Slower
+        0.18,
+        0.18,  # Even slower
+        0.25,
+        0.30,  # Final slow rolls
     ]
-    
+
     with Live(console=console, refresh_per_second=20, transient=False) as live:
         # Show random numbers for suspense
         for delay in frame_delays:
@@ -265,11 +274,11 @@ def animate_dice_roll(sides: int = 20, label: str = "Rolling") -> int:
             display.append(f"{random_num}", style="bold white")
             live.update(display)
             time.sleep(delay)
-        
+
         # Show final result with a brief pause
         final_display = Text()
         final_display.append(f"🎲 {label}... ", style="bold yellow")
-        
+
         # Check for critical roll (20) or fumble (1) on d20
         if sides == 20 and final_roll == 20:
             final_display.append(f"{final_roll}", style="bold green")
@@ -279,12 +288,12 @@ def animate_dice_roll(sides: int = 20, label: str = "Rolling") -> int:
             final_display.append(" 💀 FUMBLE!", style="bold red blink")
         else:
             final_display.append(f"{final_roll}", style="bold green")
-        
+
         live.update(final_display)
         time.sleep(0.4)  # Brief pause to see the result
-    
+
     # Live display with transient=False leaves the final result visible
     # Add a blank line for spacing before the Roll Result panel
     console.print()
-    
+
     return final_roll

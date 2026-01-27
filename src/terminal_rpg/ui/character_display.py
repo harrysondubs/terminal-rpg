@@ -21,7 +21,7 @@ def display_player_stats(player: Player) -> None:
         player: Player object
     """
     console.print()
-    
+
     # Character header text with Rich markup
     header_text = Text.from_markup(
         f"[bold white]{player.name}[/bold white]\n"
@@ -35,7 +35,13 @@ def display_player_stats(player: Player) -> None:
     stats_table.add_column("Value", justify="center", style="white", width=10)
 
     # HP with color coding
-    hp_color = "green" if player.hp > player.max_hp * 0.5 else "yellow" if player.hp > player.max_hp * 0.25 else "red"
+    hp_color = (
+        "green"
+        if player.hp > player.max_hp * 0.5
+        else "yellow"
+        if player.hp > player.max_hp * 0.25
+        else "red"
+    )
     stats_table.add_row("HP", f"[{hp_color}]{player.hp}[/{hp_color}]/{player.max_hp}")
     stats_table.add_row("Gold", f"[yellow]{player.gold}[/yellow]")
     stats_table.add_row("XP", str(player.xp))
@@ -48,18 +54,17 @@ def display_player_stats(player: Player) -> None:
     stats_table.add_row("Charisma", str(player.charisma))
 
     # Group everything together
-    content = Group(
-        header_text,
-        stats_table
-    )
+    content = Group(header_text, stats_table)
 
     # Wrap everything in a single panel
-    console.print(Panel(
-        content,
-        title="[bold cyan]📊 Character Stats[/bold cyan]",
-        border_style="cyan",
-        padding=(1, 2)
-    ))
+    console.print(
+        Panel(
+            content,
+            title="[bold cyan]📊 Character Stats[/bold cyan]",
+            border_style="cyan",
+            padding=(1, 2),
+        )
+    )
     console.print()
 
 
@@ -73,10 +78,10 @@ def display_player_inventory(game_state) -> None:
     """
     player = game_state.player
     console.print()
-    
+
     # Build the content as a string
     content_lines = []
-    
+
     # Header
     content_lines.append(f"[bold white]{player.name}'s Inventory[/bold white]")
     content_lines.append(f"[yellow]Gold:[/yellow] {player.gold}")
@@ -86,13 +91,15 @@ def display_player_inventory(game_state) -> None:
     content_lines.append("[bold cyan]⚔️  Weapons:[/bold cyan]")
     if game_state.inventory_weapons:
         equipped_weapon_ids = {w.id for w in game_state.equipped_weapons}
-        
+
         for weapon, quantity in game_state.inventory_weapons:
             equipped_mark = " [green](equipped)[/green]" if weapon.id in equipped_weapon_ids else ""
             qty_str = f" x{quantity}" if quantity > 1 else ""
             content_lines.append(f"  • [yellow]{weapon.name}[/yellow]{qty_str}{equipped_mark}")
             content_lines.append(f"    {weapon.description}")
-            content_lines.append(f"    Attack: {weapon.attack} | Type: {weapon.type.value} | Hands: {weapon.hands_required.value}")
+            content_lines.append(
+                f"    Attack: {weapon.attack} | Type: {weapon.type.value} | Hands: {weapon.hands_required.value}"
+            )
     else:
         content_lines.append("  [dim]None[/dim]")
 
@@ -102,7 +109,7 @@ def display_player_inventory(game_state) -> None:
     content_lines.append("[bold cyan]🛡️  Armor:[/bold cyan]")
     if game_state.inventory_armor:
         equipped_armor_ids = {a.id for a in game_state.equipped_armor}
-        
+
         for armor, quantity in game_state.inventory_armor:
             equipped_mark = " [green](equipped)[/green]" if armor.id in equipped_armor_ids else ""
             qty_str = f" x{quantity}" if quantity > 1 else ""
@@ -128,12 +135,14 @@ def display_player_inventory(game_state) -> None:
     # Join all content and wrap in a single panel
     full_content = "\n".join(content_lines)
 
-    console.print(Panel(
-        full_content,
-        title="[bold yellow]🎒 Inventory[/bold yellow]",
-        border_style="yellow",
-        padding=(1, 2)
-    ))
+    console.print(
+        Panel(
+            full_content,
+            title="[bold yellow]🎒 Inventory[/bold yellow]",
+            border_style="yellow",
+            padding=(1, 2),
+        )
+    )
     console.print()
 
 
@@ -148,33 +157,37 @@ def display_class_info(class_name: str, class_data: dict) -> None:
     console.print()
 
     # Class description
-    console.print(Panel(
-        class_data['description'],
-        title=f"[bold cyan]{class_name}[/bold cyan] ({class_data['character_species']})",
-        border_style="cyan",
-        padding=(1, 2)
-    ))
+    console.print(
+        Panel(
+            class_data["description"],
+            title=f"[bold cyan]{class_name}[/bold cyan] ({class_data['character_species']})",
+            border_style="cyan",
+            padding=(1, 2),
+        )
+    )
 
     # Stats table
     stats_table = Table(title="Ability Scores", show_header=True, header_style="bold magenta")
     stats_table.add_column("Attribute", style="cyan", width=15)
     stats_table.add_column("Score", justify="center", style="green", width=10)
 
-    stats = class_data['stats']
-    stats_table.add_row("Strength", str(stats['strength']))
-    stats_table.add_row("Dexterity", str(stats['dexterity']))
-    stats_table.add_row("Constitution", str(stats['constitution']))
-    stats_table.add_row("Intelligence", str(stats['intelligence']))
-    stats_table.add_row("Wisdom", str(stats['wisdom']))
-    stats_table.add_row("Charisma", str(stats['charisma']))
+    stats = class_data["stats"]
+    stats_table.add_row("Strength", str(stats["strength"]))
+    stats_table.add_row("Dexterity", str(stats["dexterity"]))
+    stats_table.add_row("Constitution", str(stats["constitution"]))
+    stats_table.add_row("Intelligence", str(stats["intelligence"]))
+    stats_table.add_row("Wisdom", str(stats["wisdom"]))
+    stats_table.add_row("Charisma", str(stats["charisma"]))
 
     console.print(stats_table)
     console.print()
 
     # HP and Gold
-    constitution = stats['constitution']
-    max_hp = class_data['base_hp'] + (constitution * 2)
-    console.print(f"[bold green]HP:[/bold green] {max_hp}  |  [bold yellow]Gold:[/bold yellow] {class_data['starting_gold']}")
+    constitution = stats["constitution"]
+    max_hp = class_data["base_hp"] + (constitution * 2)
+    console.print(
+        f"[bold green]HP:[/bold green] {max_hp}  |  [bold yellow]Gold:[/bold yellow] {class_data['starting_gold']}"
+    )
     console.print()
 
     # Equipment

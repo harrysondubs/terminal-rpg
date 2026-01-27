@@ -4,10 +4,9 @@ Each preset defines a complete campaign package with world, locations, equipment
 """
 
 # Import all preset modules to trigger registration
-from . import forgotten_realms
-from . import sword_coast
+from . import forgotten_realms, sword_coast
 
 __all__ = [
-    'forgotten_realms',
-    'sword_coast',
+    "forgotten_realms",
+    "sword_coast",
 ]

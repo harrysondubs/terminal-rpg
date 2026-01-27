@@ -10,7 +10,6 @@ from ....storage.database import Database
 from ....storage.models import GameState
 from ....storage.repositories import PlayerRepository
 
-
 console = Console()
 
 
@@ -23,11 +22,11 @@ TOOL_DEFINITION = {
         "properties": {
             "amount": {
                 "type": "integer",
-                "description": "Amount of gold to add (positive) or remove (negative)"
+                "description": "Amount of gold to add (positive) or remove (negative)",
             }
         },
-        "required": ["amount"]
-    }
+        "required": ["amount"],
+    },
 }
 
 
@@ -52,7 +51,9 @@ def execute(amount: int, game_state: GameState, db: Database) -> str:
         console.print()
         console.print(Panel(warning_msg, border_style="red", title="⚠️  Transaction Failed"))
         console.print()
-        return f"Warning: Cannot remove {abs(amount)} gold. {player.name} only has {player.gold} gold."
+        return (
+            f"Warning: Cannot remove {abs(amount)} gold. {player.name} only has {player.gold} gold."
+        )
 
     # Update player's gold
     player_repo = PlayerRepository(db)
@@ -68,12 +69,12 @@ def execute(amount: int, game_state: GameState, db: Database) -> str:
         old_xp = player.xp
         new_xp = old_xp + amount
         new_level = get_level_from_xp(new_xp)
-        
+
         # Update XP and level in database and game state
         player_repo.update_xp_and_level(player.id, new_xp, new_level)
         player.xp = new_xp
         player.level = new_level
-        
+
         # Set flag if player leveled up
         if new_level > old_level:
             game_state.pending_level_up = True

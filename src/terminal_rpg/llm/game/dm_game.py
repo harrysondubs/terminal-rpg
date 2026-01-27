@@ -5,7 +5,6 @@ Handles message creation, tool execution, and response processing.
 
 import json
 import logging
-from typing import Optional
 
 from anthropic import APIError
 
@@ -59,7 +58,7 @@ TOOLS = [
     CREATE_LOCATION_TOOL,
     GOLD_TOOL,
     HP_TOOL,
-    ABILITY_CHECK_TOOL
+    ABILITY_CHECK_TOOL,
 ]
 
 MAX_TOOL_ITERATIONS = 5  # Prevent infinite tool loops
@@ -81,10 +80,12 @@ class DMGame:
         """
         self.db = db
         self.campaign_id = campaign_id
-        self.game_state: Optional[GameState] = None
+        self.game_state: GameState | None = None
         self.status = None
 
-    def get_response(self, user_input: str, game_state: GameState, status=None) -> tuple[str, Optional[str]]:
+    def get_response(
+        self, user_input: str, game_state: GameState, status=None
+    ) -> tuple[str, str | None]:
         """
         Get response from Claude for user input, handling tools automatically.
 
@@ -103,11 +104,7 @@ class DMGame:
 
         # Save user message
         save_user_message(
-            self.campaign_id,
-            game_state.world.id,
-            game_state.location.id,
-            user_input,
-            self.db
+            self.campaign_id, game_state.world.id, game_state.location.id, user_input, self.db
         )
 
         # Reconstruct conversation history
@@ -123,7 +120,9 @@ class DMGame:
 
             try:
                 # Log the messages being sent to API
-                logger.info(f"Sending {len(messages)} messages to Claude API (iteration {iteration})")
+                logger.info(
+                    f"Sending {len(messages)} messages to Claude API (iteration {iteration})"
+                )
                 logger.debug("Messages payload:")
                 # Convert messages to JSON-serializable format for logging
                 serializable_messages = []
@@ -137,7 +136,7 @@ class DMGame:
                         for block in content:
                             if isinstance(block, dict):
                                 serializable_msg["content"].append(block)
-                            elif hasattr(block, '__dict__'):
+                            elif hasattr(block, "__dict__"):
                                 # Convert SDK objects to dict
                                 serializable_msg["content"].append(str(block))
                     serializable_messages.append(serializable_msg)
@@ -149,7 +148,7 @@ class DMGame:
                     system=system_prompt,
                     max_tokens=4096,
                     temperature=1.0,
-                    tools=TOOLS
+                    tools=TOOLS,
                 )
             except APIError as e:
                 logger.error(f"API Error: {e}")
@@ -160,7 +159,7 @@ class DMGame:
 
             if not tool_use_blocks:
                 # No tools, extract text and save
-                text_blocks = [block.text for block in response.content if hasattr(block, 'text')]
+                text_blocks = [block.text for block in response.content if hasattr(block, "text")]
                 final_text = "\n\n".join(text_blocks)
 
                 save_assistant_message(
@@ -168,7 +167,7 @@ class DMGame:
                     game_state.world.id,
                     game_state.location.id,
                     final_text,
-                    self.db
+                    self.db,
                 )
 
                 return final_text, None
@@ -178,20 +177,19 @@ class DMGame:
             # Convert response.content to the proper format for saving
             content_blocks = []
             for block in response.content:
-                if hasattr(block, 'text'):
+                if hasattr(block, "text"):
                     # Text block
-                    content_blocks.append({
-                        "type": "text",
-                        "text": block.text
-                    })
+                    content_blocks.append({"type": "text", "text": block.text})
                 elif block.type == "tool_use":
                     # Tool use block
-                    content_blocks.append({
-                        "type": "tool_use",
-                        "id": block.id,
-                        "name": block.name,
-                        "input": block.input
-                    })
+                    content_blocks.append(
+                        {
+                            "type": "tool_use",
+                            "id": block.id,
+                            "name": block.name,
+                            "input": block.input,
+                        }
+                    )
 
             save_tool_call(
                 self.campaign_id,
@@ -199,37 +197,25 @@ class DMGame:
                 game_state.location.id,
                 response.id,
                 content_blocks,
-                self.db
+                self.db,
             )
 
             # Execute tools
             tool_results = []
             for tool_block in tool_use_blocks:
                 result = self._execute_tool(tool_block.name, tool_block.input, self.status)
-                tool_results.append({
-                    "type": "tool_result",
-                    "tool_use_id": tool_block.id,
-                    "content": result
-                })
+                tool_results.append(
+                    {"type": "tool_result", "tool_use_id": tool_block.id, "content": result}
+                )
 
             # Save tool results
             save_tool_results(
-                self.campaign_id,
-                game_state.world.id,
-                game_state.location.id,
-                tool_results,
-                self.db
+                self.campaign_id, game_state.world.id, game_state.location.id, tool_results, self.db
             )
 
             # Add assistant message with tool calls and tool results to messages
-            messages.append({
-                "role": "assistant",
-                "content": response.content
-            })
-            messages.append({
-                "role": "user",
-                "content": tool_results
-            })
+            messages.append({"role": "assistant", "content": response.content})
+            messages.append({"role": "user", "content": tool_results})
 
             # Continue loop to get next response
 
@@ -260,7 +246,7 @@ class DMGame:
                     tool_input["value"],
                     self.game_state,
                     self.db,
-                    tool_input.get("quantity", 1)
+                    tool_input.get("quantity", 1),
                 )
 
             elif tool_name == "add_weapon_to_inventory":
@@ -274,7 +260,7 @@ class DMGame:
                     tool_input["value"],
                     self.game_state,
                     self.db,
-                    tool_input.get("quantity", 1)
+                    tool_input.get("quantity", 1),
                 )
 
             elif tool_name == "add_armor_to_inventory":
@@ -287,7 +273,7 @@ class DMGame:
                     tool_input["value"],
                     self.game_state,
                     self.db,
-                    tool_input.get("quantity", 1)
+                    tool_input.get("quantity", 1),
                 )
 
             elif tool_name == "remove_from_inventory":
@@ -296,43 +282,27 @@ class DMGame:
                     tool_input["name"],
                     self.game_state,
                     self.db,
-                    tool_input.get("quantity", 1)
+                    tool_input.get("quantity", 1),
                 )
 
             elif tool_name == "change_location":
                 return change_location_execute(
-                    tool_input["location_name"],
-                    self.game_state,
-                    self.db
+                    tool_input["location_name"], self.game_state, self.db
                 )
 
             elif tool_name == "view_locations":
-                return view_locations_execute(
-                    self.game_state,
-                    self.db
-                )
+                return view_locations_execute(self.game_state, self.db)
 
             elif tool_name == "create_location":
                 return create_location_execute(
-                    tool_input["location_name"],
-                    tool_input["description"],
-                    self.game_state,
-                    self.db
+                    tool_input["location_name"], tool_input["description"], self.game_state, self.db
                 )
 
             elif tool_name == "adjust_player_gold":
-                return execute_gold(
-                    tool_input["amount"],
-                    self.game_state,
-                    self.db
-                )
+                return execute_gold(tool_input["amount"], self.game_state, self.db)
 
             elif tool_name == "adjust_player_hp":
-                return execute_hp(
-                    tool_input["amount"],
-                    self.game_state,
-                    self.db
-                )
+                return execute_hp(tool_input["amount"], self.game_state, self.db)
 
             elif tool_name == "ability_check":
                 return execute_ability_check(
@@ -341,7 +311,7 @@ class DMGame:
                     tool_input["context"],
                     self.game_state,
                     self.db,
-                    status
+                    status,
                 )
 
             else:

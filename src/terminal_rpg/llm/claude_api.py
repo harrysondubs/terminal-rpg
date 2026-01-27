@@ -5,7 +5,6 @@ Handles API calls with model configuration and error handling.
 
 import os
 from enum import Enum
-from typing import Optional
 
 from anthropic import Anthropic
 from anthropic.types import Message
@@ -13,6 +12,7 @@ from anthropic.types import Message
 
 class ClaudeModel(Enum):
     """Available Claude models"""
+
     SONNET_4_5 = "claude-sonnet-4-5-20250929"
     OPUS_4_5 = "claude-opus-4-5-20251101"
     HAIKU_4_5 = "claude-haiku-4-5-20251001"
@@ -21,11 +21,11 @@ class ClaudeModel(Enum):
 def create_message(
     messages: list[dict],
     model: ClaudeModel = ClaudeModel.SONNET_4_5,
-    system: Optional[str] = None,
+    system: str | None = None,
     max_tokens: int = 4096,
     temperature: float = 1.0,
-    tools: Optional[list[dict]] = None,
-    thinking: Optional[dict] = None
+    tools: list[dict] | None = None,
+    thinking: dict | None = None,
 ) -> Message:
     """
     Send a message to Claude API and return the response.
@@ -51,7 +51,7 @@ def create_message(
         "model": model.value,
         "max_tokens": max_tokens,
         "temperature": temperature,
-        "messages": messages
+        "messages": messages,
     }
 
     if system:

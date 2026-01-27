@@ -8,7 +8,7 @@ import logging
 from ..engines.xp_utils import calculate_hp_increase
 from ..llm.game.dm_game import DMGame
 from ..storage.database import Database
-from ..storage.repositories import CampaignRepository, CampaignLogRepository, PlayerRepository
+from ..storage.repositories import CampaignLogRepository, CampaignRepository, PlayerRepository
 from ..ui.game_display import GameDisplay
 
 logger = logging.getLogger(__name__)
@@ -70,7 +70,7 @@ class GameEngine:
         # Check for pending level-up before getting user input
         if self.game_state.pending_level_up:
             self._handle_level_up()
-        
+
         # Get user input
         user_input = self.display.get_user_input()
 
@@ -85,7 +85,7 @@ class GameEngine:
         # Note: We start the spinner here, but tools may need to pause it for interactivity
         status = self.display.display_thinking_status()
         status.__enter__()
-        
+
         try:
             response_text, error = self.dm_api.get_response(user_input, self.game_state, status)
         finally:
@@ -115,18 +115,18 @@ class GameEngine:
         command = user_input.lower()
 
         # Quit commands
-        if command in ['/quit', '/exit']:
+        if command in ["/quit", "/exit"]:
             self.running = False
             self.display.display_farewell(self.game_state.player.name)
             return True
 
         # Inventory commands
-        if command in ['/inventory', '/i']:
+        if command in ["/inventory", "/i"]:
             self.display.display_inventory(self.game_state)
             return True
 
         # Stats commands
-        if command in ['/stats', '/s']:
+        if command in ["/stats", "/s"]:
             self.display.display_stats(self.game_state)
             return True
 
@@ -137,7 +137,7 @@ class GameEngine:
         """Handle game pause (Ctrl+C)."""
         self.display.display_pause_message()
         user_input = self.display.get_user_input().strip().lower()
-        if user_input in ['/quit', '/exit']:
+        if user_input in ["/quit", "/exit"]:
             self.running = False
 
     def _handle_level_up(self):
@@ -147,42 +147,43 @@ class GameEngine:
         """
         player = self.game_state.player
         new_level = player.level
-        
+
         # Display level-up UI and get ability choice
         chosen_ability = self.display.display_level_up(player, new_level)
-        
+
         # Get old ability value
         old_value = getattr(player, chosen_ability)
         new_value = old_value + 1
-        
+
         # Calculate HP increase based on constitution
         # If constitution was increased, use the new value for calculation
         constitution = player.constitution
         if chosen_ability == "constitution":
             constitution = new_value
-        
+
         hp_increase = calculate_hp_increase(constitution)
-        
+
         # Update ability score in game state
         setattr(player, chosen_ability, new_value)
-        
+
         # Update max HP and current HP (heal by increase amount)
         old_max_hp = player.max_hp
         new_max_hp = old_max_hp + hp_increase
         player.max_hp = new_max_hp
         player.hp = min(player.hp + hp_increase, new_max_hp)  # Heal but don't exceed max
-        
+
         # Persist changes to database
         player_repo = PlayerRepository(self.db)
         player_repo.update_ability_score(player.id, chosen_ability, new_value)
         player_repo.update_max_hp(player.id, new_max_hp)
         player_repo.update_hp(player.id, player.hp)
-        
+
         # Display summary
         from ..engines.utils import calculate_ability_modifier
+
         new_modifier = calculate_ability_modifier(new_value)
         modifier_str = f"+{new_modifier}" if new_modifier >= 0 else str(new_modifier)
-        
+
         summary = f"""[bold green]Level Up Complete![/bold green]
 
 [bold]New Level:[/bold] {new_level}
@@ -193,9 +194,12 @@ class GameEngine:
 [bold red]Current HP:[/bold red] {player.hp}"""
 
         from rich.panel import Panel
+
         self.display.console.print()
-        self.display.console.print(Panel(summary, border_style="green", title="✨ Character Improvement ✨"))
+        self.display.console.print(
+            Panel(summary, border_style="green", title="✨ Character Improvement ✨")
+        )
         self.display.console.print()
-        
+
         # Clear the level-up flag
         self.game_state.pending_level_up = False

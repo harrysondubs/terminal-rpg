@@ -1,5 +1,9 @@
-rich
-questionary
-anthropic
-inquirer
-python-dotenv
+# Runtime dependencies for Terminal RPG
+# Pin to specific versions for reproducibility
+# To upgrade: pip install --upgrade <package> then update this file
+
+rich==14.3.1
+questionary==2.1.1
+anthropic==0.76.0
+inquirer==3.4.1
+python-dotenv==1.2.1

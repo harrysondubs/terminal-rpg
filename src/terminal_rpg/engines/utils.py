@@ -2,6 +2,7 @@
 Utility functions for RPG mechanics.
 """
 
+
 def calculate_ability_modifier(ability_score: int) -> int:
     """
     Calculate D&D ability modifier from ability score.

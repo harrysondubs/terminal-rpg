@@ -3,10 +3,9 @@ NPC repository for NPC entity CRUD operations.
 """
 
 import sqlite3
-from typing import Optional
 
-from .base import BaseRepository
 from ..models import NPC, Disposition, datetime_from_db
+from .base import BaseRepository
 
 
 class NPCRepository(BaseRepository):
@@ -19,29 +18,39 @@ class NPCRepository(BaseRepository):
                (world_id, campaign_id, battle_id, name, character_class, character_species,
                 level, hp, max_hp, xp, gold, disposition)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (npc.world_id, npc.campaign_id, npc.battle_id, npc.name,
-             npc.character_class, npc.character_species,
-             npc.level, npc.hp, npc.max_hp, npc.xp, npc.gold, npc.disposition.value)
+            (
+                npc.world_id,
+                npc.campaign_id,
+                npc.battle_id,
+                npc.name,
+                npc.character_class,
+                npc.character_species,
+                npc.level,
+                npc.hp,
+                npc.max_hp,
+                npc.xp,
+                npc.gold,
+                npc.disposition.value,
+            ),
         )
-        npc.created_at = self._fetch_timestamp('npcs', npc.id)
+        npc.created_at = self._fetch_timestamp("npcs", npc.id)
         return npc
 
-    def get_by_id(self, npc_id: int) -> Optional[NPC]:
+    def get_by_id(self, npc_id: int) -> NPC | None:
         """Fetch single NPC by ID"""
-        row = self._fetch_by_id('npcs', npc_id)
+        row = self._fetch_by_id("npcs", npc_id)
         return self._row_to_npc(row) if row else None
 
-    def get_by_world(self, world_id: int, campaign_id: Optional[int] = None) -> list[NPC]:
+    def get_by_world(self, world_id: int, campaign_id: int | None = None) -> list[NPC]:
         """Get NPCs available in a world (optionally filtered by campaign)"""
         if campaign_id is not None:
             rows = self.db.conn.execute(
                 "SELECT * FROM npcs WHERE world_id = ? AND (campaign_id IS NULL OR campaign_id = ?)",
-                (world_id, campaign_id)
+                (world_id, campaign_id),
             ).fetchall()
         else:
             rows = self.db.conn.execute(
-                "SELECT * FROM npcs WHERE world_id = ? AND campaign_id IS NULL",
-                (world_id,)
+                "SELECT * FROM npcs WHERE world_id = ? AND campaign_id IS NULL", (world_id,)
             ).fetchall()
         return [self._row_to_npc(row) for row in rows]
 
@@ -52,31 +61,43 @@ class NPCRepository(BaseRepository):
                world_id = ?, campaign_id = ?, battle_id = ?, name = ?, character_class = ?,
                character_species = ?, level = ?, hp = ?, max_hp = ?, xp = ?, gold = ?, disposition = ?
                WHERE id = ?""",
-            (npc.world_id, npc.campaign_id, npc.battle_id, npc.name,
-             npc.character_class, npc.character_species,
-             npc.level, npc.hp, npc.max_hp, npc.xp, npc.gold, npc.disposition.value, npc.id)
+            (
+                npc.world_id,
+                npc.campaign_id,
+                npc.battle_id,
+                npc.name,
+                npc.character_class,
+                npc.character_species,
+                npc.level,
+                npc.hp,
+                npc.max_hp,
+                npc.xp,
+                npc.gold,
+                npc.disposition.value,
+                npc.id,
+            ),
         )
         self.db.conn.commit()
 
     def delete(self, npc_id: int) -> None:
         """Delete NPC"""
-        self._delete_by_id('npcs', npc_id)
+        self._delete_by_id("npcs", npc_id)
 
     def _row_to_npc(self, row: sqlite3.Row) -> NPC:
         """Convert database row to NPC dataclass"""
         return NPC(
-            id=row['id'],
-            world_id=row['world_id'],
-            campaign_id=row['campaign_id'],
-            battle_id=row['battle_id'],
-            name=row['name'],
-            character_class=row['character_class'],
-            character_species=row['character_species'],
-            level=row['level'],
-            hp=row['hp'],
-            max_hp=row['max_hp'],
-            xp=row['xp'],
-            gold=row['gold'],
-            disposition=Disposition(row['disposition']),
-            created_at=datetime_from_db(row['created_at'])
+            id=row["id"],
+            world_id=row["world_id"],
+            campaign_id=row["campaign_id"],
+            battle_id=row["battle_id"],
+            name=row["name"],
+            character_class=row["character_class"],
+            character_species=row["character_species"],
+            level=row["level"],
+            hp=row["hp"],
+            max_hp=row["max_hp"],
+            xp=row["xp"],
+            gold=row["gold"],
+            disposition=Disposition(row["disposition"]),
+            created_at=datetime_from_db(row["created_at"]),
         )

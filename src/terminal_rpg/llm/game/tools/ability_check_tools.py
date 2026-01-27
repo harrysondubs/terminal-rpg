@@ -3,7 +3,6 @@ Ability check tool for DM - handles skill checks with dice rolls.
 """
 
 from enum import Enum
-from typing import Dict
 
 from rich.console import Console
 from rich.panel import Panel
@@ -15,12 +14,12 @@ from ....storage.models import GameState
 from ....storage.repositories import PlayerRepository
 from ....ui.game_display import animate_dice_roll
 
-
 console = Console()
 
 
 class AbilityType(Enum):
     """Enum for ability types"""
+
     STRENGTH = "strength"
     DEXTERITY = "dexterity"
     CONSTITUTION = "constitution"
@@ -38,26 +37,40 @@ TOOL_DEFINITION = {
         "properties": {
             "ability_type": {
                 "type": "string",
-                "enum": ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"],
-                "description": "The ability to check against"
+                "enum": [
+                    "strength",
+                    "dexterity",
+                    "constitution",
+                    "intelligence",
+                    "wisdom",
+                    "charisma",
+                ],
+                "description": "The ability to check against",
             },
             "difficulty_class": {
                 "type": "integer",
                 "description": "The DC (difficulty class) - target number the player must meet or beat. Range: 1-30",
                 "minimum": 1,
-                "maximum": 30
+                "maximum": 30,
             },
             "context": {
                 "type": "string",
-                "description": "Brief description of what the player is attempting (e.g., 'climb the wall', 'persuade the guard', 'recall ancient lore')"
-            }
+                "description": "Brief description of what the player is attempting (e.g., 'climb the wall', 'persuade the guard', 'recall ancient lore')",
+            },
         },
-        "required": ["ability_type", "difficulty_class", "context"]
-    }
+        "required": ["ability_type", "difficulty_class", "context"],
+    },
 }
 
 
-def execute(ability_type: str, difficulty_class: int, context: str, game_state: GameState, db: Database, status=None) -> str:
+def execute(
+    ability_type: str,
+    difficulty_class: int,
+    context: str,
+    game_state: GameState,
+    db: Database,
+    status=None,
+) -> str:
     """
     Execute an ability check with interactive dice roll.
 
@@ -78,7 +91,7 @@ def execute(ability_type: str, difficulty_class: int, context: str, game_state: 
     ability_type_enum = AbilityType(ability_type)
 
     # Get the relevant ability score
-    ability_scores: Dict[AbilityType, int] = {
+    ability_scores: dict[AbilityType, int] = {
         AbilityType.STRENGTH: player.strength,
         AbilityType.DEXTERITY: player.dexterity,
         AbilityType.CONSTITUTION: player.constitution,
@@ -133,13 +146,13 @@ Press Enter to roll the d20..."""
     xp_gained = roll if success else roll // 2
     new_xp = old_xp + xp_gained
     new_level = get_level_from_xp(new_xp)
-    
+
     # Update XP and level in database and game state
     player_repo = PlayerRepository(db)
     player_repo.update_xp_and_level(player.id, new_xp, new_level)
     player.xp = new_xp
     player.level = new_level
-    
+
     # Set flag if player leveled up
     if new_level > old_level:
         game_state.pending_level_up = True

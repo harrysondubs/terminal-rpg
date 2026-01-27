@@ -3,17 +3,17 @@ Campaign creation engine for RPG game.
 Handles preset-based campaign creation with equipment setup and initialization.
 """
 
+from ..campaign_presets import CampaignPreset, CharacterClassPreset, PresetLoader, PresetRegistry
 from ..storage.database import Database
 from ..storage.models import Campaign, Player
 from ..storage.repositories import (
-    CampaignRepository,
-    PlayerRepository,
-    ItemRepository,
-    WeaponRepository,
     ArmorRepository,
+    CampaignRepository,
+    ItemRepository,
     LocationRepository,
+    PlayerRepository,
+    WeaponRepository,
 )
-from ..campaign_presets import CampaignPreset, CharacterClassPreset, PresetRegistry, PresetLoader
 
 
 def get_available_presets() -> list[CampaignPreset]:
@@ -48,7 +48,7 @@ def create_new_campaign_from_preset(
     campaign_name: str,
     player_name: str,
     player_description: str,
-    class_preset: CharacterClassPreset
+    class_preset: CharacterClassPreset,
 ) -> tuple[Campaign, Player]:
     """
     Create a new campaign from a campaign preset.
@@ -93,48 +93,48 @@ def create_new_campaign_from_preset(
         raise ValueError(f"No locations found in world {world_id}")
 
     # 3. Create Campaign with starting location
-    campaign = campaign_repo.create(Campaign(
-        name=campaign_name,
-        world_id=world_id,
-        current_location_id=starting_location.id
-    ))
+    campaign = campaign_repo.create(
+        Campaign(name=campaign_name, world_id=world_id, current_location_id=starting_location.id)
+    )
 
     # 4. Calculate HP from constitution
-    constitution = class_preset.stats['constitution']
+    constitution = class_preset.stats["constitution"]
     max_hp = class_preset.base_hp + (constitution * 2)
 
     # 5. Create Player with class stats
-    player = player_repo.create(Player(
-        campaign_id=campaign.id,
-        name=player_name,
-        description=player_description,
-        character_class=class_preset.name,
-        character_species=class_preset.character_species,
-        level=1,
-        xp=0,
-        hp=max_hp,
-        max_hp=max_hp,
-        gold=class_preset.starting_gold,
-        strength=class_preset.stats['strength'],
-        dexterity=class_preset.stats['dexterity'],
-        constitution=class_preset.stats['constitution'],
-        intelligence=class_preset.stats['intelligence'],
-        wisdom=class_preset.stats['wisdom'],
-        charisma=class_preset.stats['charisma']
-    ))
+    player = player_repo.create(
+        Player(
+            campaign_id=campaign.id,
+            name=player_name,
+            description=player_description,
+            character_class=class_preset.name,
+            character_species=class_preset.character_species,
+            level=1,
+            xp=0,
+            hp=max_hp,
+            max_hp=max_hp,
+            gold=class_preset.starting_gold,
+            strength=class_preset.stats["strength"],
+            dexterity=class_preset.stats["dexterity"],
+            constitution=class_preset.stats["constitution"],
+            intelligence=class_preset.stats["intelligence"],
+            wisdom=class_preset.stats["wisdom"],
+            charisma=class_preset.stats["charisma"],
+        )
+    )
 
     # 6. Resolve equipment IDs from names
     equipment_config = {
-        'weapons': class_preset.equipment_weapons,
-        'armor': class_preset.equipment_armor,
-        'items': class_preset.equipment_items
+        "weapons": class_preset.equipment_weapons,
+        "armor": class_preset.equipment_armor,
+        "items": class_preset.equipment_items,
     }
     equipment_ids = _resolve_equipment_ids(db, world_id, equipment_config)
 
     # 7. Add equipment to inventory and auto-equip
     auto_equip_config = {
-        'weapon': class_preset.auto_equip_weapon,
-        'armor': class_preset.auto_equip_armor
+        "weapon": class_preset.auto_equip_weapon,
+        "armor": class_preset.auto_equip_armor,
     }
     _add_starting_equipment(db, player.id, equipment_ids, auto_equip_config)
 
@@ -142,9 +142,7 @@ def create_new_campaign_from_preset(
 
 
 def _resolve_equipment_ids(
-    db: Database,
-    world_id: int,
-    equipment_config: dict
+    db: Database, world_id: int, equipment_config: dict
 ) -> dict[str, list[int]]:
     """
     Convert equipment names to database IDs.
@@ -178,35 +176,28 @@ def _resolve_equipment_ids(
 
     # Resolve IDs
     weapon_ids = []
-    for weapon_name in equipment_config.get('weapons', []):
+    for weapon_name in equipment_config.get("weapons", []):
         if weapon_name not in weapon_map:
             raise ValueError(f"Weapon '{weapon_name}' not found in world {world_id}")
         weapon_ids.append(weapon_map[weapon_name])
 
     armor_ids = []
-    for armor_name in equipment_config.get('armor', []):
+    for armor_name in equipment_config.get("armor", []):
         if armor_name not in armor_map:
             raise ValueError(f"Armor '{armor_name}' not found in world {world_id}")
         armor_ids.append(armor_map[armor_name])
 
     item_ids = []
-    for item_name in equipment_config.get('items', []):
+    for item_name in equipment_config.get("items", []):
         if item_name not in item_map:
             raise ValueError(f"Item '{item_name}' not found in world {world_id}")
         item_ids.append(item_map[item_name])
 
-    return {
-        'weapon_ids': weapon_ids,
-        'armor_ids': armor_ids,
-        'item_ids': item_ids
-    }
+    return {"weapon_ids": weapon_ids, "armor_ids": armor_ids, "item_ids": item_ids}
 
 
 def _add_starting_equipment(
-    db: Database,
-    player_id: int,
-    equipment_ids: dict,
-    auto_equip_config: dict
+    db: Database, player_id: int, equipment_ids: dict, auto_equip_config: dict
 ) -> None:
     """
     Add equipment to player inventory and auto-equip specified items.
@@ -222,23 +213,25 @@ def _add_starting_equipment(
     armor_repo = ArmorRepository(db)
 
     # Get all equipment to create name->id mappings for auto-equip
-    all_weapons = {w.id: w for w in [weapon_repo.get_by_id(wid) for wid in equipment_ids['weapon_ids']]}
-    all_armor = {a.id: a for a in [armor_repo.get_by_id(aid) for aid in equipment_ids['armor_ids']]}
+    all_weapons = {
+        w.id: w for w in [weapon_repo.get_by_id(wid) for wid in equipment_ids["weapon_ids"]]
+    }
+    all_armor = {a.id: a for a in [armor_repo.get_by_id(aid) for aid in equipment_ids["armor_ids"]]}
 
     # Add items (consumables - not equipped)
-    for item_id in equipment_ids['item_ids']:
+    for item_id in equipment_ids["item_ids"]:
         player_repo.add_item(player_id, item_id, quantity=1)
 
     # Add weapons
-    for weapon_id in equipment_ids['weapon_ids']:
+    for weapon_id in equipment_ids["weapon_ids"]:
         player_repo.add_weapon(player_id, weapon_id, quantity=1)
 
     # Add armor
-    for armor_id in equipment_ids['armor_ids']:
+    for armor_id in equipment_ids["armor_ids"]:
         player_repo.add_armor(player_id, armor_id, quantity=1)
 
     # Auto-equip primary weapon
-    primary_weapon_name = auto_equip_config.get('weapon')
+    primary_weapon_name = auto_equip_config.get("weapon")
     if primary_weapon_name:
         for weapon_id, weapon in all_weapons.items():
             if weapon.name == primary_weapon_name:
@@ -246,7 +239,7 @@ def _add_starting_equipment(
                 break
 
     # Auto-equip armor pieces
-    armor_to_equip = auto_equip_config.get('armor', [])
+    armor_to_equip = auto_equip_config.get("armor", [])
     for armor_id, armor in all_armor.items():
         if armor.name in armor_to_equip:
             player_repo.equip_armor(player_id, armor_id)
