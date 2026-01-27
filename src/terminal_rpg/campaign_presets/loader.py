@@ -208,10 +208,11 @@ class PresetLoader:
                     world_id=world_id,
                     name=npc_def.name,
                     character_class=npc_def.character_class,
-                    character_race=npc_def.character_race,
+                    character_species=npc_def.character_species,
                     hp=npc_def.hp,
                     max_hp=npc_def.max_hp,
                     level=npc_def.level,
                     xp=npc_def.xp,
-                    gold=npc_def.gold
+                    gold=npc_def.gold,
+                    disposition=npc_def.disposition
                 ))

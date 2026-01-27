@@ -20,12 +20,12 @@ class PlayerRepository(BaseRepository):
         """Insert player, return with ID populated"""
         player.id = self._execute_insert(
             """INSERT INTO players
-               (campaign_id, name, description, character_class, character_race,
+               (campaign_id, name, description, character_class, character_species,
                 level, hp, max_hp, xp, gold, strength, dexterity, constitution,
                 intelligence, wisdom, charisma)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (player.campaign_id, player.name, player.description,
-             player.character_class, player.character_race,
+             player.character_class, player.character_species,
              player.level, player.hp, player.max_hp, player.xp, player.gold,
              player.strength, player.dexterity, player.constitution,
              player.intelligence, player.wisdom, player.charisma)
@@ -50,12 +50,12 @@ class PlayerRepository(BaseRepository):
         self.db.conn.execute(
             """UPDATE players SET
                campaign_id = ?, name = ?, description = ?, character_class = ?,
-               character_race = ?, level = ?, hp = ?, max_hp = ?, xp = ?, gold = ?,
+               character_species = ?, level = ?, hp = ?, max_hp = ?, xp = ?, gold = ?,
                strength = ?, dexterity = ?, constitution = ?, intelligence = ?,
                wisdom = ?, charisma = ?
                WHERE id = ?""",
             (player.campaign_id, player.name, player.description,
-             player.character_class, player.character_race,
+             player.character_class, player.character_species,
              player.level, player.hp, player.max_hp, player.xp, player.gold,
              player.strength, player.dexterity, player.constitution,
              player.intelligence, player.wisdom, player.charisma, player.id)
@@ -214,7 +214,7 @@ class PlayerRepository(BaseRepository):
             name=row['name'],
             description=row['description'],
             character_class=row['character_class'],
-            character_race=row['character_race'],
+            character_species=row['character_species'],
             level=row['level'],
             hp=row['hp'],
             max_hp=row['max_hp'],

@@ -109,7 +109,7 @@ def create_new_campaign_from_preset(
         name=player_name,
         description=player_description,
         character_class=class_preset.name,
-        character_race=class_preset.character_race,
+        character_species=class_preset.character_species,
         level=1,
         xp=0,
         hp=max_hp,

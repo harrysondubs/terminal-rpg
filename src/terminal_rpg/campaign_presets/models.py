@@ -4,7 +4,7 @@ Defines the structure for preset definitions including worlds, locations, equipm
 """
 
 from dataclasses import dataclass
-from ..storage.models import Rarity, WeaponType, HandsRequired, ArmorType
+from ..storage.models import Rarity, WeaponType, HandsRequired, ArmorType, Disposition
 
 
 @dataclass
@@ -58,12 +58,13 @@ class NPCDefinition:
     """Definition for an NPC or enemy."""
     name: str
     character_class: str
-    character_race: str
+    character_species: str
     hp: int
     max_hp: int
     level: int
     xp: int
     gold: int
+    disposition: Disposition = Disposition.HOSTILE
 
 
 @dataclass
@@ -71,7 +72,7 @@ class CharacterClassPreset:
     """Character class preset with stats and equipment."""
     name: str
     description: str
-    character_race: str
+    character_species: str
     stats: dict[str, int]  # Keys: strength, dexterity, constitution, intelligence, wisdom, charisma
     base_hp: int
     starting_gold: int

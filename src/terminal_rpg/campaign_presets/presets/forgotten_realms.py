@@ -163,7 +163,7 @@ FORGOTTEN_REALMS_PRESET = CampaignPreset(
         "Fighter": CharacterClassPreset(
             name="Fighter",
             description="A mighty warrior skilled in melee combat and heavy armor",
-            character_race="Human",
+            character_species="Human",
             stats={
                 "strength": 16,
                 "dexterity": 12,
@@ -183,7 +183,7 @@ FORGOTTEN_REALMS_PRESET = CampaignPreset(
         "Thief": CharacterClassPreset(
             name="Thief",
             description="A nimble rogue who relies on speed, stealth, and precision",
-            character_race="Halfling",
+            character_species="Halfling",
             stats={
                 "strength": 10,
                 "dexterity": 17,
@@ -203,7 +203,7 @@ FORGOTTEN_REALMS_PRESET = CampaignPreset(
         "Bard": CharacterClassPreset(
             name="Bard",
             description="A charismatic performer who weaves magic through music and words",
-            character_race="Elf",
+            character_species="Elf",
             stats={
                 "strength": 9,
                 "dexterity": 13,

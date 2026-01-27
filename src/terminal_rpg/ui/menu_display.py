@@ -85,7 +85,7 @@ def display_class_info_from_preset(class_name: str, class_preset: CharacterClass
     # Class description
     console.print(Panel(
         class_preset.description,
-        title=f"[bold cyan]{class_name}[/bold cyan] ({class_preset.character_race})",
+        title=f"[bold cyan]{class_name}[/bold cyan] ({class_preset.character_species})",
         border_style="cyan",
         padding=(1, 2)
     ))
@@ -140,7 +140,7 @@ def display_game_start_summary(
     # Character sheet header
     console.print(Panel(
         f"[bold white]{player.name}[/bold white]\n"
-        f"[cyan]{player.character_class}[/cyan] ({player.character_race})\n"
+        f"[cyan]{player.character_class}[/cyan] ({player.character_species})\n"
         f"Level {player.level}",
         title="[bold green]✨ Character Created ✨[/bold green]",
         border_style="green",

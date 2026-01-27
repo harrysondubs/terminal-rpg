@@ -6,7 +6,7 @@ import sqlite3
 from typing import Optional
 
 from .base import BaseRepository
-from ..models import NPC, datetime_from_db
+from ..models import NPC, Disposition, datetime_from_db
 
 
 class NPCRepository(BaseRepository):
@@ -16,12 +16,12 @@ class NPCRepository(BaseRepository):
         """Insert NPC, return with ID populated"""
         npc.id = self._execute_insert(
             """INSERT INTO npcs
-               (world_id, campaign_id, battle_id, name, character_class, character_race,
-                level, hp, max_hp, xp, gold)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+               (world_id, campaign_id, battle_id, name, character_class, character_species,
+                level, hp, max_hp, xp, gold, disposition)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (npc.world_id, npc.campaign_id, npc.battle_id, npc.name,
-             npc.character_class, npc.character_race,
-             npc.level, npc.hp, npc.max_hp, npc.xp, npc.gold)
+             npc.character_class, npc.character_species,
+             npc.level, npc.hp, npc.max_hp, npc.xp, npc.gold, npc.disposition.value)
         )
         npc.created_at = self._fetch_timestamp('npcs', npc.id)
         return npc
@@ -50,11 +50,11 @@ class NPCRepository(BaseRepository):
         self.db.conn.execute(
             """UPDATE npcs SET
                world_id = ?, campaign_id = ?, battle_id = ?, name = ?, character_class = ?,
-               character_race = ?, level = ?, hp = ?, max_hp = ?, xp = ?, gold = ?
+               character_species = ?, level = ?, hp = ?, max_hp = ?, xp = ?, gold = ?, disposition = ?
                WHERE id = ?""",
             (npc.world_id, npc.campaign_id, npc.battle_id, npc.name,
-             npc.character_class, npc.character_race,
-             npc.level, npc.hp, npc.max_hp, npc.xp, npc.gold, npc.id)
+             npc.character_class, npc.character_species,
+             npc.level, npc.hp, npc.max_hp, npc.xp, npc.gold, npc.disposition.value, npc.id)
         )
         self.db.conn.commit()
 
@@ -71,11 +71,12 @@ class NPCRepository(BaseRepository):
             battle_id=row['battle_id'],
             name=row['name'],
             character_class=row['character_class'],
-            character_race=row['character_race'],
+            character_species=row['character_species'],
             level=row['level'],
             hp=row['hp'],
             max_hp=row['max_hp'],
             xp=row['xp'],
             gold=row['gold'],
+            disposition=Disposition(row['disposition']),
             created_at=datetime_from_db(row['created_at'])
         )

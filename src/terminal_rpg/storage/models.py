@@ -48,6 +48,12 @@ class LogType(Enum):
     TOOL_RESULT = "tool_result"
 
 
+class Disposition(Enum):
+    """NPC disposition towards the player"""
+    HOSTILE = "hostile"
+    ALLY = "ally"
+
+
 # ===== Entity Dataclasses =====
 
 @dataclass
@@ -77,7 +83,7 @@ class Player:
     name: str
     description: str
     character_class: str
-    character_race: str
+    character_species: str
     hp: int
     max_hp: int
     level: int = 1
@@ -140,9 +146,10 @@ class NPC:
     world_id: int
     name: str
     character_class: str
-    character_race: str
+    character_species: str
     hp: int
     max_hp: int
+    disposition: Disposition = Disposition.HOSTILE
     level: int = 1
     xp: int = 0
     gold: int = 0

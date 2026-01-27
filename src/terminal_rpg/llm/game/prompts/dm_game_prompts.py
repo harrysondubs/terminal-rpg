@@ -35,7 +35,7 @@ def create_dm_system_prompt(game_state: GameState) -> str:
 
 # Player Character
 **Name**: {player.name}
-**Race**: {player.character_race}
+**Species**: {player.character_species}
 **Class**: {player.character_class}
 **Level**: {player.level}
 **HP**: {player.hp}/{player.max_hp}

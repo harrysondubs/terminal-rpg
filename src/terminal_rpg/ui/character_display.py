@@ -25,7 +25,7 @@ def display_player_stats(player: Player) -> None:
     # Character header text with Rich markup
     header_text = Text.from_markup(
         f"[bold white]{player.name}[/bold white]\n"
-        f"[cyan]{player.character_class}[/cyan] ({player.character_race})\n"
+        f"[cyan]{player.character_class}[/cyan] ({player.character_species})\n"
         f"Level {player.level}\n"
     )
 
@@ -150,7 +150,7 @@ def display_class_info(class_name: str, class_data: dict) -> None:
     # Class description
     console.print(Panel(
         class_data['description'],
-        title=f"[bold cyan]{class_name}[/bold cyan] ({class_data['character_race']})",
+        title=f"[bold cyan]{class_name}[/bold cyan] ({class_data['character_species']})",
         border_style="cyan",
         padding=(1, 2)
     ))

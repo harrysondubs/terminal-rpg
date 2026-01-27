@@ -103,7 +103,7 @@ SWORD_COAST_PRESET = CampaignPreset(
         NPCDefinition(
             name="Bandit Archer",
             character_class="Rogue",
-            character_race="Human",
+            character_species="Human",
             hp=30,
             max_hp=30,
             level=2,
@@ -113,7 +113,7 @@ SWORD_COAST_PRESET = CampaignPreset(
         NPCDefinition(
             name="Coastal Pirate",
             character_class="Fighter",
-            character_race="Human",
+            character_species="Human",
             hp=40,
             max_hp=40,
             level=3,
@@ -125,7 +125,7 @@ SWORD_COAST_PRESET = CampaignPreset(
         "Ranger": CharacterClassPreset(
             name="Ranger",
             description="A skilled tracker and archer, equally at home in wilderness and city",
-            character_race="Human",
+            character_species="Human",
             stats={
                 "strength": 13,
                 "dexterity": 16,
