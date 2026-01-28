@@ -25,6 +25,7 @@ def create_message(
     max_tokens: int = 4096,
     temperature: float = 1.0,
     tools: list[dict] | None = None,
+    tool_choice: dict | None = None,
     thinking: dict | None = None,
 ) -> Message:
     """
@@ -36,7 +37,11 @@ def create_message(
         system: Optional system prompt
         max_tokens: Maximum tokens in response
         temperature: Randomness (0-1)
-        tools: Optional tool definitions (sets tool_choice="auto")
+        tools: Optional tool definitions
+        tool_choice: Optional tool choice configuration:
+            - None: defaults to {"type": "auto"} when tools provided
+            - {"type": "auto"}: let Claude decide which tool to use
+            - {"type": "tool", "name": "tool_name"}: force specific tool
         thinking: Optional extended thinking config
 
     Returns:
@@ -59,7 +64,8 @@ def create_message(
 
     if tools:
         kwargs["tools"] = tools
-        kwargs["tool_choice"] = {"type": "auto"}
+        # Use provided tool_choice, or default to auto
+        kwargs["tool_choice"] = tool_choice if tool_choice is not None else {"type": "auto"}
 
     if thinking:
         kwargs["thinking"] = thinking

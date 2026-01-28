@@ -83,6 +83,24 @@ class BattleParticipantRepository(BaseRepository):
             )
         self.db.conn.commit()
 
+    def update_initiative(
+        self, battle_id: int, npc_id: int | None, player_id: int | None, initiative_roll: int
+    ) -> None:
+        """Update the initiative roll for a participant"""
+        if npc_id is not None:
+            self.db.conn.execute(
+                """UPDATE battle_participants SET initiative_roll = ?, updated_at = datetime('now')
+                   WHERE battle_id = ? AND npc_id = ?""",
+                (initiative_roll, battle_id, npc_id),
+            )
+        else:
+            self.db.conn.execute(
+                """UPDATE battle_participants SET initiative_roll = ?, updated_at = datetime('now')
+                   WHERE battle_id = ? AND player_id = ?""",
+                (initiative_roll, battle_id, player_id),
+            )
+        self.db.conn.commit()
+
     def update_is_active(
         self, battle_id: int, npc_id: int | None, player_id: int | None, is_active: bool
     ) -> None:

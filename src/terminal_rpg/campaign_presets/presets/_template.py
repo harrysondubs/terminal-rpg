@@ -153,8 +153,26 @@ YOUR_PRESET_NAME = CampaignPreset(
         ),
     ],
     # STEP 7: NPCs can be left empty - they're created during gameplay
+    # NPCs are typically generated dynamically, but you can predefine some if desired
     npcs=[
-        # Leave empty or add predefined NPCs if desired
+        # Example NPC (uncomment and customize if needed):
+        # NPCDefinition(
+        #     name="Hostile Bandit",
+        #     description="A rough-looking bandit wielding a rusty blade",
+        #     character_class="Bandit",
+        #     character_species="Human",
+        #     hp=25,
+        #     max_hp=25,
+        #     ac=12,  # Light armor
+        #     attack_mod=2,  # Attack bonus
+        #     damage_dice_count=1,
+        #     damage_dice_sides=DamageDiceSides.D6,
+        #     initiative_mod=1,  # Initiative bonus (dexterity-based typically)
+        #     level=2,
+        #     xp=50,
+        #     gold=15,
+        #     disposition=Disposition.HOSTILE,
+        # ),
     ],
     # STEP 8: Define 2-4 character classes
     # Each class should have unique stats, equipment, and flavor

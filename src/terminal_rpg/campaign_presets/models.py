@@ -72,10 +72,16 @@ class NPCDefinition:
     """Definition for an NPC or enemy."""
 
     name: str
+    description: str
     character_class: str
     character_species: str
     hp: int
     max_hp: int
+    ac: int
+    attack_mod: int
+    damage_dice_count: int
+    damage_dice_sides: DamageDiceSides
+    initiative_mod: int
     level: int
     xp: int
     gold: int
