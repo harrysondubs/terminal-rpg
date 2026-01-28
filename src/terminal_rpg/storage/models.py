@@ -33,14 +33,23 @@ class HandsRequired(Enum):
     TWO_HANDED = "two_handed"
 
 
-class ArmorType(Enum):
-    """Armor equipment slots"""
+class DamageDiceSides(Enum):
+    """Damage dice sides for weapon damage rolls"""
 
-    HELMET = "helmet"
+    D4 = "d4"
+    D6 = "d6"
+    D8 = "d8"
+    D10 = "d10"
+    D12 = "d12"
+
+
+class ArmorType(Enum):
+    """Armor categories and equipment"""
+
+    LIGHT = "light"
+    MEDIUM = "medium"
+    HEAVY = "heavy"
     SHIELD = "shield"
-    CHESTPLATE = "chestplate"
-    BOOTS = "boots"
-    LEGGINGS = "leggings"
 
 
 class LogType(Enum):
@@ -130,7 +139,8 @@ class Weapon:
     description: str
     type: WeaponType
     hands_required: HandsRequired
-    attack: int
+    damage_dice_count: int
+    damage_dice_sides: DamageDiceSides
     rarity: Rarity
     value: int = 0
     campaign_id: int | None = None
@@ -145,7 +155,7 @@ class Armor:
     name: str
     description: str
     type: ArmorType
-    defense: int
+    ac: int
     rarity: Rarity
     value: int = 0
     campaign_id: int | None = None
@@ -167,7 +177,6 @@ class NPC:
     xp: int = 0
     gold: int = 0
     campaign_id: int | None = None
-    battle_id: int | None = None
     id: int | None = None
     created_at: datetime | None = None
 
@@ -194,6 +203,20 @@ class Battle:
     campaign_id: int | None = None
     id: int | None = None
     created_at: datetime | None = None
+
+
+@dataclass
+class BattleParticipant:
+    """Join table linking battles to participants (NPCs and Players) with turn order"""
+
+    battle_id: int
+    npc_id: int | None = None
+    player_id: int | None = None
+    turn_order: int | None = None
+    is_active: bool = True
+    initiative_roll: int | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
 
 @dataclass

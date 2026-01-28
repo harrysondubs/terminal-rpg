@@ -158,7 +158,8 @@ class PresetLoader:
                         description=weapon_def.description,
                         type=weapon_def.type,
                         hands_required=weapon_def.hands_required,
-                        attack=weapon_def.attack,
+                        damage_dice_count=weapon_def.damage_dice_count,
+                        damage_dice_sides=weapon_def.damage_dice_sides,
                         rarity=weapon_def.rarity,
                         value=weapon_def.value,
                     )
@@ -177,7 +178,7 @@ class PresetLoader:
                         name=armor_def.name,
                         description=armor_def.description,
                         type=armor_def.type,
-                        defense=armor_def.defense,
+                        ac=armor_def.ac,
                         rarity=armor_def.rarity,
                         value=armor_def.value,
                     )

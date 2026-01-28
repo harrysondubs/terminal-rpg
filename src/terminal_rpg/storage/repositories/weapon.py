@@ -4,7 +4,7 @@ Weapon repository for Weapon entity CRUD operations.
 
 import sqlite3
 
-from ..models import HandsRequired, Rarity, Weapon, WeaponType
+from ..models import DamageDiceSides, HandsRequired, Rarity, Weapon, WeaponType
 from .base import BaseRepository
 
 
@@ -15,8 +15,8 @@ class WeaponRepository(BaseRepository):
         """Insert weapon, return with ID populated"""
         weapon.id = self._execute_insert(
             """INSERT INTO weapons
-               (world_id, campaign_id, name, description, type, hands_required, attack, rarity, value)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+               (world_id, campaign_id, name, description, type, hands_required, damage_dice_count, damage_dice_sides, rarity, value)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 weapon.world_id,
                 weapon.campaign_id,
@@ -24,7 +24,8 @@ class WeaponRepository(BaseRepository):
                 weapon.description,
                 weapon.type.value,
                 weapon.hands_required.value,
-                weapon.attack,
+                weapon.damage_dice_count,
+                weapon.damage_dice_sides.value,
                 weapon.rarity.value,
                 weapon.value,
             ),
@@ -54,7 +55,7 @@ class WeaponRepository(BaseRepository):
         self.db.conn.execute(
             """UPDATE weapons SET
                world_id = ?, campaign_id = ?, name = ?, description = ?,
-               type = ?, hands_required = ?, attack = ?, rarity = ?, value = ?
+               type = ?, hands_required = ?, damage_dice_count = ?, damage_dice_sides = ?, rarity = ?, value = ?
                WHERE id = ?""",
             (
                 weapon.world_id,
@@ -63,7 +64,8 @@ class WeaponRepository(BaseRepository):
                 weapon.description,
                 weapon.type.value,
                 weapon.hands_required.value,
-                weapon.attack,
+                weapon.damage_dice_count,
+                weapon.damage_dice_sides.value,
                 weapon.rarity.value,
                 weapon.value,
                 weapon.id,
@@ -85,7 +87,8 @@ class WeaponRepository(BaseRepository):
             description=row["description"],
             type=WeaponType(row["type"]),
             hands_required=HandsRequired(row["hands_required"]),
-            attack=row["attack"],
+            damage_dice_count=row["damage_dice_count"],
+            damage_dice_sides=DamageDiceSides(row["damage_dice_sides"]),
             rarity=Rarity(row["rarity"]),
             value=row["value"],
         )

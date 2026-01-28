@@ -6,6 +6,7 @@ from ....storage.database import Database
 from ....storage.models import (
     Armor,
     ArmorType,
+    DamageDiceSides,
     GameState,
     HandsRequired,
     Item,
@@ -44,8 +45,9 @@ def view_inventory_execute(game_state: GameState) -> str:
 
     if game_state.equipped_weapons:
         for weapon in game_state.equipped_weapons:
+            dice_str = f"{weapon.damage_dice_count}{weapon.damage_dice_sides.value}"
             lines.append(
-                f"- **{weapon.name}** (Attack: +{weapon.attack}, {weapon.type.value}, {weapon.hands_required.value})"
+                f"- **{weapon.name}** (Damage: {dice_str}, {weapon.type.value}, {weapon.hands_required.value})"
             )
             lines.append(f"  _{weapon.description}_")
     else:
@@ -55,7 +57,10 @@ def view_inventory_execute(game_state: GameState) -> str:
 
     if game_state.equipped_armor:
         for armor in game_state.equipped_armor:
-            lines.append(f"- **{armor.name}** (Defense: +{armor.defense}, {armor.type.value})")
+            ac_display = (
+                f"AC: {armor.ac}" if armor.type.value != "shield" else f"AC Bonus: +{armor.ac}"
+            )
+            lines.append(f"- **{armor.name}** ({ac_display}, {armor.type.value})")
             lines.append(f"  _{armor.description}_")
     else:
         lines.append("- None")
@@ -64,7 +69,8 @@ def view_inventory_execute(game_state: GameState) -> str:
 
     if game_state.inventory_weapons:
         for weapon, qty in game_state.inventory_weapons:
-            lines.append(f"- **{weapon.name}** x{qty} (Attack: +{weapon.attack})")
+            dice_str = f"{weapon.damage_dice_count}{weapon.damage_dice_sides.value}"
+            lines.append(f"- **{weapon.name}** x{qty} (Damage: {dice_str})")
     else:
         lines.append("- None")
 
@@ -72,7 +78,10 @@ def view_inventory_execute(game_state: GameState) -> str:
 
     if game_state.inventory_armor:
         for armor, qty in game_state.inventory_armor:
-            lines.append(f"- **{armor.name}** x{qty} (Defense: +{armor.defense})")
+            ac_display = (
+                f"AC: {armor.ac}" if armor.type.value != "shield" else f"AC Bonus: +{armor.ac}"
+            )
+            lines.append(f"- **{armor.name}** x{qty} ({ac_display})")
     else:
         lines.append("- None")
 
@@ -212,7 +221,15 @@ ADD_WEAPON_TOOL = {
                 "enum": ["one_handed", "two_handed"],
                 "description": "Number of hands needed to wield",
             },
-            "attack": {"type": "integer", "description": "Attack bonus the weapon provides"},
+            "damage_dice_count": {
+                "type": "integer",
+                "description": "Number of damage dice to roll (typically 1-2)",
+            },
+            "damage_dice_sides": {
+                "type": "string",
+                "enum": ["d4", "d6", "d8", "d10", "d12"],
+                "description": "Type of damage die (d4, d6, d8, d10, or d12)",
+            },
             "value": {"type": "integer", "description": "Gold value of the weapon"},
             "quantity": {
                 "type": "integer",
@@ -220,7 +237,16 @@ ADD_WEAPON_TOOL = {
                 "default": 1,
             },
         },
-        "required": ["name", "description", "rarity", "type", "hands_required", "attack", "value"],
+        "required": [
+            "name",
+            "description",
+            "rarity",
+            "type",
+            "hands_required",
+            "damage_dice_count",
+            "damage_dice_sides",
+            "value",
+        ],
     },
 }
 
@@ -231,7 +257,8 @@ def add_weapon_execute(
     rarity: str,
     type: str,
     hands_required: str,
-    attack: int,
+    damage_dice_count: int,
+    damage_dice_sides: str,
     value: int,
     game_state: GameState,
     db: Database,
@@ -246,7 +273,8 @@ def add_weapon_execute(
         rarity: Weapon rarity (common/rare/legendary)
         type: Weapon type (melee/ranged)
         hands_required: Hands required (one_handed/two_handed)
-        attack: Attack bonus
+        damage_dice_count: Number of damage dice
+        damage_dice_sides: Type of damage die (d4/d6/d8/d10/d12)
         value: Weapon gold value
         game_state: Current game state
         db: Database connection
@@ -262,8 +290,8 @@ def add_weapon_execute(
     if not description or not description.strip():
         return "Error: Weapon description cannot be empty."
 
-    if attack < 0:
-        return "Error: Attack value cannot be negative."
+    if damage_dice_count < 1:
+        return "Error: Damage dice count must be at least 1."
 
     if value < 0:
         return "Error: Weapon value cannot be negative."
@@ -287,6 +315,11 @@ def add_weapon_execute(
     except ValueError:
         return f"Error: Invalid hands_required '{hands_required}'. Must be one of: one_handed, two_handed."
 
+    try:
+        dice_enum = DamageDiceSides(damage_dice_sides.lower())
+    except ValueError:
+        return f"Error: Invalid damage_dice_sides '{damage_dice_sides}'. Must be one of: d4, d6, d8, d10, d12."
+
     name = name.strip()
     description = description.strip()
 
@@ -301,7 +334,8 @@ def add_weapon_execute(
         description=description,
         type=type_enum,
         hands_required=hands_enum,
-        attack=attack,
+        damage_dice_count=damage_dice_count,
+        damage_dice_sides=dice_enum,
         rarity=rarity_enum,
         value=value,
     )
@@ -313,7 +347,8 @@ def add_weapon_execute(
         player_repo.add_weapon(game_state.player.id, created_weapon.id, quantity)
 
         qty_text = f"{quantity}x " if quantity > 1 else ""
-        return f"Successfully added {qty_text}{created_weapon.name} (Attack: +{attack}, {type}, {rarity}) to {game_state.player.name}'s inventory."
+        dice_str = f"{damage_dice_count}{damage_dice_sides}"
+        return f"Successfully added {qty_text}{created_weapon.name} (Damage: {dice_str}, {type}, {rarity}) to {game_state.player.name}'s inventory."
     except Exception as e:
         return f"Error adding weapon to inventory: {str(e)}"
 
@@ -321,7 +356,7 @@ def add_weapon_execute(
 # ===== ADD ARMOR TO INVENTORY TOOL =====
 ADD_ARMOR_TOOL = {
     "name": "add_armor_to_inventory",
-    "description": "Add a new armor piece to the player's inventory. Use this when the player finds, buys, or receives new armor.",
+    "description": "Add a new armor piece to the player's inventory. Use this when the player finds, buys, or receives new armor. For light/medium/heavy armor, 'ac' is the base AC. For shields, 'ac' is the AC bonus.",
     "input_schema": {
         "type": "object",
         "properties": {
@@ -334,10 +369,13 @@ ADD_ARMOR_TOOL = {
             },
             "type": {
                 "type": "string",
-                "enum": ["helmet", "shield", "chestplate", "boots", "leggings"],
-                "description": "Armor equipment slot type",
+                "enum": ["light", "medium", "heavy", "shield"],
+                "description": "Armor type: light (AC 11-12), medium (AC 13-15), heavy (AC 16-18), shield (AC bonus +1 to +3)",
             },
-            "defense": {"type": "integer", "description": "Defense bonus the armor provides"},
+            "ac": {
+                "type": "integer",
+                "description": "For light/medium/heavy: base AC (11-18). For shields: AC bonus (+1 to +3, typically +2)",
+            },
             "value": {"type": "integer", "description": "Gold value of the armor"},
             "quantity": {
                 "type": "integer",
@@ -345,7 +383,7 @@ ADD_ARMOR_TOOL = {
                 "default": 1,
             },
         },
-        "required": ["name", "description", "rarity", "type", "defense", "value"],
+        "required": ["name", "description", "rarity", "type", "ac", "value"],
     },
 }
 
@@ -355,7 +393,7 @@ def add_armor_execute(
     description: str,
     rarity: str,
     type: str,
-    defense: int,
+    ac: int,
     value: int,
     game_state: GameState,
     db: Database,
@@ -368,8 +406,8 @@ def add_armor_execute(
         name: Armor name
         description: Armor description
         rarity: Armor rarity (common/rare/legendary)
-        type: Armor type (helmet/shield/chestplate/boots/leggings)
-        defense: Defense bonus
+        type: Armor type (light/medium/heavy/shield)
+        ac: AC value (base AC for armor, AC bonus for shields)
         value: Armor gold value
         game_state: Current game state
         db: Database connection
@@ -385,8 +423,8 @@ def add_armor_execute(
     if not description or not description.strip():
         return "Error: Armor description cannot be empty."
 
-    if defense < 0:
-        return "Error: Defense value cannot be negative."
+    if ac < 0:
+        return "Error: AC value cannot be negative."
 
     if value < 0:
         return "Error: Armor value cannot be negative."
@@ -403,7 +441,7 @@ def add_armor_execute(
     try:
         type_enum = ArmorType(type.lower())
     except ValueError:
-        return f"Error: Invalid armor type '{type}'. Must be one of: helmet, shield, chestplate, boots, leggings."
+        return f"Error: Invalid armor type '{type}'. Must be one of: light, medium, heavy, shield."
 
     name = name.strip()
     description = description.strip()
@@ -418,7 +456,7 @@ def add_armor_execute(
         name=name,
         description=description,
         type=type_enum,
-        defense=defense,
+        ac=ac,
         rarity=rarity_enum,
         value=value,
     )
@@ -430,7 +468,8 @@ def add_armor_execute(
         player_repo.add_armor(game_state.player.id, created_armor.id, quantity)
 
         qty_text = f"{quantity}x " if quantity > 1 else ""
-        return f"Successfully added {qty_text}{created_armor.name} (Defense: +{defense}, {type}, {rarity}) to {game_state.player.name}'s inventory."
+        ac_display = f"AC: {ac}" if type != "shield" else f"AC Bonus: +{ac}"
+        return f"Successfully added {qty_text}{created_armor.name} ({ac_display}, {type}, {rarity}) to {game_state.player.name}'s inventory."
     except Exception as e:
         return f"Error adding armor to inventory: {str(e)}"
 

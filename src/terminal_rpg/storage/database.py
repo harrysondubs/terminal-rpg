@@ -123,7 +123,8 @@ class Database:
                 description TEXT,
                 type TEXT NOT NULL CHECK (type IN ('melee', 'ranged')),
                 hands_required TEXT NOT NULL CHECK (hands_required IN ('one_handed', 'two_handed')),
-                attack INTEGER NOT NULL,
+                damage_dice_count INTEGER NOT NULL DEFAULT 1,
+                damage_dice_sides TEXT NOT NULL CHECK (damage_dice_sides IN ('d4', 'd6', 'd8', 'd10', 'd12')) DEFAULT 'd4',
                 rarity TEXT NOT NULL CHECK (rarity IN ('common', 'rare', 'legendary')),
                 value INTEGER NOT NULL DEFAULT 0,
                 FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE RESTRICT,
@@ -140,8 +141,8 @@ class Database:
                 campaign_id INTEGER,
                 name TEXT NOT NULL,
                 description TEXT,
-                type TEXT NOT NULL CHECK (type IN ('helmet', 'shield', 'chestplate', 'boots', 'leggings')),
-                defense INTEGER NOT NULL,
+                type TEXT NOT NULL CHECK (type IN ('light', 'medium', 'heavy', 'shield')),
+                ac INTEGER NOT NULL DEFAULT 10,
                 rarity TEXT NOT NULL CHECK (rarity IN ('common', 'rare', 'legendary')),
                 value INTEGER NOT NULL DEFAULT 0,
                 FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE RESTRICT,
@@ -230,7 +231,6 @@ class Database:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 world_id INTEGER NOT NULL,
                 campaign_id INTEGER,
-                battle_id INTEGER,
                 name TEXT NOT NULL,
                 character_class TEXT NOT NULL,
                 character_species TEXT NOT NULL,
@@ -242,8 +242,27 @@ class Database:
                 disposition TEXT NOT NULL CHECK (disposition IN ('hostile', 'ally')) DEFAULT 'hostile',
                 created_at TEXT DEFAULT (datetime('now')),
                 FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE RESTRICT,
-                FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE,
-                FOREIGN KEY (battle_id) REFERENCES battles(id) ON DELETE CASCADE
+                FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
+            )
+        """
+        )
+
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS battle_participants (
+                battle_id INTEGER NOT NULL,
+                npc_id INTEGER,
+                player_id INTEGER,
+                turn_order INTEGER,
+                is_active BOOLEAN NOT NULL DEFAULT 1,
+                initiative_roll INTEGER,
+                created_at TEXT DEFAULT (datetime('now')),
+                updated_at TEXT DEFAULT (datetime('now')),
+                PRIMARY KEY (battle_id, npc_id, player_id),
+                FOREIGN KEY (battle_id) REFERENCES battles(id) ON DELETE CASCADE,
+                FOREIGN KEY (npc_id) REFERENCES npcs(id) ON DELETE CASCADE,
+                FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE,
+                CHECK ((npc_id IS NOT NULL AND player_id IS NULL) OR (npc_id IS NULL AND player_id IS NOT NULL))
             )
         """
         )
@@ -281,7 +300,6 @@ class Database:
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_armor_campaign ON armor(campaign_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_npcs_world ON npcs(world_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_npcs_campaign ON npcs(campaign_id)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_npcs_battle ON npcs(battle_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_locations_world ON locations(world_id)")
         cursor.execute(
             "CREATE INDEX IF NOT EXISTS idx_locations_campaign ON locations(campaign_id)"
@@ -306,6 +324,29 @@ class Database:
         )
         cursor.execute(
             "CREATE INDEX IF NOT EXISTS idx_player_armor_player ON player_armor(player_id)"
+        )
+
+        # Battle participants indexes
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_battle_participants_battle ON battle_participants(battle_id)"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_battle_participants_npc ON battle_participants(npc_id)"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_battle_participants_player ON battle_participants(player_id)"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_battle_participants_turn_order ON battle_participants(battle_id, turn_order)"
+        )
+
+        # Create unique constraint for turn order within a battle (when not null)
+        cursor.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_battle_participants_unique_turn_order
+            ON battle_participants(battle_id, turn_order)
+            WHERE turn_order IS NOT NULL
+        """
         )
 
         # Create unique constraints for locations

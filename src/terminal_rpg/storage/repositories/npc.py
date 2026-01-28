@@ -15,13 +15,12 @@ class NPCRepository(BaseRepository):
         """Insert NPC, return with ID populated"""
         npc.id = self._execute_insert(
             """INSERT INTO npcs
-               (world_id, campaign_id, battle_id, name, character_class, character_species,
+               (world_id, campaign_id, name, character_class, character_species,
                 level, hp, max_hp, xp, gold, disposition)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 npc.world_id,
                 npc.campaign_id,
-                npc.battle_id,
                 npc.name,
                 npc.character_class,
                 npc.character_species,
@@ -58,13 +57,12 @@ class NPCRepository(BaseRepository):
         """Update existing NPC"""
         self.db.conn.execute(
             """UPDATE npcs SET
-               world_id = ?, campaign_id = ?, battle_id = ?, name = ?, character_class = ?,
+               world_id = ?, campaign_id = ?, name = ?, character_class = ?,
                character_species = ?, level = ?, hp = ?, max_hp = ?, xp = ?, gold = ?, disposition = ?
                WHERE id = ?""",
             (
                 npc.world_id,
                 npc.campaign_id,
-                npc.battle_id,
                 npc.name,
                 npc.character_class,
                 npc.character_species,
@@ -89,7 +87,6 @@ class NPCRepository(BaseRepository):
             id=row["id"],
             world_id=row["world_id"],
             campaign_id=row["campaign_id"],
-            battle_id=row["battle_id"],
             name=row["name"],
             character_class=row["character_class"],
             character_species=row["character_species"],

@@ -6,6 +6,7 @@ Starting character classes are minimalistic and focused on survival.
 
 from ...storage.models import (
     ArmorType,
+    DamageDiceSides,
     HandsRequired,
     Rarity,
     WeaponType,
@@ -82,7 +83,8 @@ ISS_HORROR_PRESET = CampaignPreset(
             description="A small, handheld scalpel with a razor-sharp edge, perfect for cutting through organic specimens",
             type=WeaponType.MELEE,  # MELEE or RANGED
             hands_required=HandsRequired.ONE_HANDED,  # ONE_HANDED or TWO_HANDED
-            attack=5,  # Attack power (5-20 is typical range)
+            damage_dice_count=1,
+            damage_dice_sides=DamageDiceSides.D4,  # Light, precise weapon
             rarity=Rarity.COMMON,
             value=12,
         ),
@@ -91,7 +93,8 @@ ISS_HORROR_PRESET = CampaignPreset(
             description="A heavy fire extinguisher with a nozzle and hose, filled with a pressurized foam solution",
             type=WeaponType.MELEE,
             hands_required=HandsRequired.TWO_HANDED,
-            attack=12,  # Higher attack for two-handed
+            damage_dice_count=1,
+            damage_dice_sides=DamageDiceSides.D6,  # Heavy two-handed improvised weapon
             rarity=Rarity.COMMON,
             value=25,
         ),
@@ -100,21 +103,40 @@ ISS_HORROR_PRESET = CampaignPreset(
             description="A heavy wrench with a metal handle and a rubber grip",
             type=WeaponType.MELEE,
             hands_required=HandsRequired.ONE_HANDED,
-            attack=8,  # Lower attack for light weapons
+            damage_dice_count=1,
+            damage_dice_sides=DamageDiceSides.D6,  # Solid improvised weapon
             rarity=Rarity.COMMON,
             value=18,
         ),
     ],
     # STEP 6: Define armor pieces
-    # Types: HELMET, CHESTPLATE, BOOTS
+    # Types: LIGHT, MEDIUM, HEAVY, SHIELD
     armor=[
+        # Light armor - minimal protection in space station environment
         ArmorDefinition(
-            name="ISS Polo Shirt",
-            description="A standard-issue polo shirt for ISS crewmembers",
-            type=ArmorType.CHESTPLATE,
-            defense=1,
+            name="ISS Flight Suit",
+            description="A standard-issue flight suit for ISS crewmembers. Provides minimal protection.",
+            type=ArmorType.LIGHT,
+            ac=10,  # Base AC for unarmored/minimal armor
             rarity=Rarity.COMMON,
-            value=10,
+            value=25,
+        ),
+        ArmorDefinition(
+            name="EVA Suit",
+            description="An extravehicular activity suit designed for spacewalks. Surprisingly durable.",
+            type=ArmorType.LIGHT,
+            ac=12,  # Slightly better protection
+            rarity=Rarity.COMMON,
+            value=100,
+        ),
+        # Shield - improvised protection
+        ArmorDefinition(
+            name="Equipment Panel",
+            description="A detached metal panel from ISS equipment. Can be used as an improvised shield.",
+            type=ArmorType.SHIELD,
+            ac=1,  # +1 AC bonus (improvised shield)
+            rarity=Rarity.COMMON,
+            value=15,
         ),
     ],
     # STEP 7: NPCs can be left empty - they're created during gameplay
@@ -136,10 +158,10 @@ ISS_HORROR_PRESET = CampaignPreset(
             base_hp=45,
             starting_gold=10,
             equipment_weapons=["Fire Extinguisher"],
-            equipment_armor=["ISS Polo Shirt"],
+            equipment_armor=["ISS Flight Suit"],
             equipment_items=["Omega Speedmaster Skywalker X-33 Wristwatch", "Family Photo"],
             auto_equip_weapon="Fire Extinguisher",
-            auto_equip_armor=["ISS Polo Shirt"],
+            auto_equip_armor=["ISS Flight Suit"],
         ),
         "Russian Systems Operations Officer (Roscosmos)": CharacterClassPreset(
             name="Russian Systems Operations Officer (Roscosmos)",
@@ -156,10 +178,10 @@ ISS_HORROR_PRESET = CampaignPreset(
             base_hp=50,
             starting_gold=10,
             equipment_weapons=["Wrench"],
-            equipment_armor=["ISS Polo Shirt"],
+            equipment_armor=["ISS Flight Suit"],
             equipment_items=["Sturmanskie Sputnik Wristwatch", "Family Photo"],
             auto_equip_weapon="Wrench",
-            auto_equip_armor=["ISS Polo Shirt"],
+            auto_equip_armor=["ISS Flight Suit"],
         ),
         "European Science Officer (ESA)": CharacterClassPreset(
             name="European Science Officer (ESA)",
@@ -176,10 +198,10 @@ ISS_HORROR_PRESET = CampaignPreset(
             base_hp=40,
             starting_gold=15,
             equipment_weapons=["Lab Scalpel"],
-            equipment_armor=["ISS Polo Shirt"],
+            equipment_armor=["ISS Flight Suit"],
             equipment_items=["Omega Speedmaster Skywalker X-33 Wristwatch", "Family Photo"],
             auto_equip_weapon="Lab Scalpel",
-            auto_equip_armor=["ISS Polo Shirt"],
+            auto_equip_armor=["ISS Flight Suit"],
         ),
         "Rhesus Macaques (Lab Primates)": CharacterClassPreset(
             name="Rhesus Macaques (Lab Primates)",
@@ -196,10 +218,10 @@ ISS_HORROR_PRESET = CampaignPreset(
             base_hp=30,
             starting_gold=0,
             equipment_weapons=["Lab Scalpel"],
-            equipment_armor=["ISS Polo Shirt"],
+            equipment_armor=["ISS Flight Suit"],
             equipment_items=[],
             auto_equip_weapon="Lab Scalpel",
-            auto_equip_armor=["ISS Polo Shirt"],
+            auto_equip_armor=["ISS Flight Suit"],
         ),
     },
     # STEP 9: Set the starting location (must match a location name above)
