@@ -94,6 +94,11 @@ class NPCRepository(BaseRepository):
         """Delete NPC"""
         self._delete_by_id("npcs", npc_id)
 
+    def update_hp(self, npc_id: int, hp: int) -> None:
+        """Update NPC's current HP"""
+        self.db.conn.execute("UPDATE npcs SET hp = ? WHERE id = ?", (hp, npc_id))
+        self.db.conn.commit()
+
     def _row_to_npc(self, row: sqlite3.Row) -> NPC:
         """Convert database row to NPC dataclass"""
         return NPC(

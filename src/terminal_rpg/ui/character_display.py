@@ -71,7 +71,7 @@ def display_player_stats(player: Player) -> None:
 def display_player_inventory(game_state) -> None:
     """
     Display player's complete inventory including gold, items, weapons, and armor.
-    Shows which weapons and armor are equipped.
+    Separates equipped and unequipped gear for better clarity.
 
     Args:
         game_state: GameState object containing player and inventory data
@@ -89,34 +89,84 @@ def display_player_inventory(game_state) -> None:
 
     # Weapons section
     content_lines.append("[bold cyan]⚔️  Weapons:[/bold cyan]")
-    if game_state.inventory_weapons:
-        equipped_weapon_ids = {w.id for w in game_state.equipped_weapons}
 
-        for weapon, quantity in game_state.inventory_weapons:
-            equipped_mark = " [green](equipped)[/green]" if weapon.id in equipped_weapon_ids else ""
+    # Separate equipped and unequipped weapons
+    equipped_weapon_ids = {w.id for w in game_state.equipped_weapons}
+    equipped_weapons = [
+        (w, q) for w, q in game_state.inventory_weapons if w.id in equipped_weapon_ids
+    ]
+    unequipped_weapons = [
+        (w, q) for w, q in game_state.inventory_weapons if w.id not in equipped_weapon_ids
+    ]
+
+    # Display equipped weapons first
+    if equipped_weapons:
+        content_lines.append("  [bold green]✓ Equipped:[/bold green]")
+        for weapon, quantity in equipped_weapons:
             qty_str = f" x{quantity}" if quantity > 1 else ""
-            content_lines.append(f"  • [yellow]{weapon.name}[/yellow]{qty_str}{equipped_mark}")
-            content_lines.append(f"    {weapon.description}")
+            dice_str = f"{weapon.damage_dice_count}{weapon.damage_dice_sides.value}"
+            content_lines.append(f"    • [green]{weapon.name}[/green]{qty_str}")
+            content_lines.append(f"      {weapon.description}")
             content_lines.append(
-                f"    Attack: {weapon.attack} | Type: {weapon.type.value} | Hands: {weapon.hands_required.value}"
+                f"      Damage: {dice_str} | Type: {weapon.type.value} | Hands: {weapon.hands_required.value}"
             )
-    else:
+
+    # Display unequipped weapons
+    if unequipped_weapons:
+        if equipped_weapons:
+            content_lines.append("")
+        content_lines.append("  [dim]In Backpack:[/dim]")
+        for weapon, quantity in unequipped_weapons:
+            qty_str = f" x{quantity}" if quantity > 1 else ""
+            dice_str = f"{weapon.damage_dice_count}{weapon.damage_dice_sides.value}"
+            content_lines.append(f"    • [yellow]{weapon.name}[/yellow]{qty_str}")
+            content_lines.append(f"      {weapon.description}")
+            content_lines.append(
+                f"      Damage: {dice_str} | Type: {weapon.type.value} | Hands: {weapon.hands_required.value}"
+            )
+
+    if not equipped_weapons and not unequipped_weapons:
         content_lines.append("  [dim]None[/dim]")
 
     content_lines.append("")
 
     # Armor section
     content_lines.append("[bold cyan]🛡️  Armor:[/bold cyan]")
-    if game_state.inventory_armor:
-        equipped_armor_ids = {a.id for a in game_state.equipped_armor}
 
-        for armor, quantity in game_state.inventory_armor:
-            equipped_mark = " [green](equipped)[/green]" if armor.id in equipped_armor_ids else ""
+    # Separate equipped and unequipped armor
+    equipped_armor_ids = {a.id for a in game_state.equipped_armor}
+    equipped_armor = [(a, q) for a, q in game_state.inventory_armor if a.id in equipped_armor_ids]
+    unequipped_armor = [
+        (a, q) for a, q in game_state.inventory_armor if a.id not in equipped_armor_ids
+    ]
+
+    # Display equipped armor first
+    if equipped_armor:
+        content_lines.append("  [bold green]✓ Equipped:[/bold green]")
+        for armor, quantity in equipped_armor:
             qty_str = f" x{quantity}" if quantity > 1 else ""
-            content_lines.append(f"  • [blue]{armor.name}[/blue]{qty_str}{equipped_mark}")
-            content_lines.append(f"    {armor.description}")
-            content_lines.append(f"    Defense: {armor.defense} | Type: {armor.type.value}")
-    else:
+            ac_display = (
+                f"AC: {armor.ac}" if armor.type.value != "shield" else f"AC Bonus: +{armor.ac}"
+            )
+            content_lines.append(f"    • [green]{armor.name}[/green]{qty_str}")
+            content_lines.append(f"      {armor.description}")
+            content_lines.append(f"      {ac_display} | Type: {armor.type.value}")
+
+    # Display unequipped armor
+    if unequipped_armor:
+        if equipped_armor:
+            content_lines.append("")
+        content_lines.append("  [dim]In Backpack:[/dim]")
+        for armor, quantity in unequipped_armor:
+            qty_str = f" x{quantity}" if quantity > 1 else ""
+            ac_display = (
+                f"AC: {armor.ac}" if armor.type.value != "shield" else f"AC Bonus: +{armor.ac}"
+            )
+            content_lines.append(f"    • [blue]{armor.name}[/blue]{qty_str}")
+            content_lines.append(f"      {armor.description}")
+            content_lines.append(f"      {ac_display} | Type: {armor.type.value}")
+
+    if not equipped_armor and not unequipped_armor:
         content_lines.append("  [dim]None[/dim]")
 
     content_lines.append("")

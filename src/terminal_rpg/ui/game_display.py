@@ -230,7 +230,9 @@ You may increase one ability score by +1."""
                 continue
 
 
-def animate_dice_roll(sides: int = 20, label: str = "Rolling") -> int:
+def animate_dice_roll(
+    sides: int = 20, label: str = "Rolling", predetermined_result: int | None = None
+) -> int:
     """
     Display an animated dice roll that starts fast and slows down.
 
@@ -240,12 +242,16 @@ def animate_dice_roll(sides: int = 20, label: str = "Rolling") -> int:
     Args:
         sides: Number of sides on the die (default: 20 for d20)
         label: Label to display during the roll (default: "Rolling")
+        predetermined_result: Optional predetermined result to animate toward (for displaying pre-rolled values)
 
     Returns:
         The final dice roll result (1 to sides)
     """
     # Determine the final result first
-    final_roll = random.randint(1, sides)
+    if predetermined_result is not None:
+        final_roll = predetermined_result
+    else:
+        final_roll = random.randint(1, sides)
 
     # Animation parameters: start fast, end slow
     # delays in seconds for each frame
@@ -297,3 +303,29 @@ def animate_dice_roll(sides: int = 20, label: str = "Rolling") -> int:
     console.print()
 
     return final_roll
+
+
+def animate_multi_dice_roll(
+    dice_count: int, sides: int, label: str = "Damage"
+) -> tuple[list[int], int]:
+    """
+    Display an animated multi-dice roll with individual results.
+
+    Args:
+        dice_count: Number of dice to roll
+        sides: Number of sides on each die
+        label: Label to display during the roll
+
+    Returns:
+        Tuple of (individual_rolls, total)
+    """
+    individual_rolls = []
+
+    for i in range(dice_count):
+        roll_label = f"{label} Die {i + 1}/{dice_count}" if dice_count > 1 else label
+
+        roll = animate_dice_roll(sides=sides, label=roll_label)
+        individual_rolls.append(roll)
+
+    total = sum(individual_rolls)
+    return individual_rolls, total

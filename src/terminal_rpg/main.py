@@ -61,6 +61,10 @@ def main():
             with Database(db_path) as db:
                 db.create_schema()
             console.print("[green]Database initialized successfully![/green]\n")
+        else:
+            # Run migrations on existing database
+            with Database(db_path) as db:
+                db.migrate_add_battle_turn_index()
 
         # Display welcome screen
         display_welcome()

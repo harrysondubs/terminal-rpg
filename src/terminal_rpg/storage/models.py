@@ -68,6 +68,15 @@ class Disposition(Enum):
     ALLY = "ally"
 
 
+# ===== Custom Exceptions =====
+
+
+class EquipmentSlotError(Exception):
+    """Raised when attempting to equip items that violate hand slot constraints"""
+
+    pass
+
+
 # ===== Entity Dataclasses =====
 
 
@@ -207,6 +216,7 @@ class Battle:
     name: str
     description: str
     campaign_id: int | None = None
+    current_turn_index: int = 0
     id: int | None = None
     created_at: datetime | None = None
 

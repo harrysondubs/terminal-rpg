@@ -65,6 +65,27 @@ class BattleParticipantRepository(BaseRepository):
         ).fetchall()
         return [self._row_to_participant(row) for row in rows]
 
+    def get_by_battle_and_participant(
+        self, battle_id: int, npc_id: int | None = None, player_id: int | None = None
+    ) -> BattleParticipant | None:
+        """Get a specific participant in a battle"""
+        if npc_id is not None:
+            row = self.db.conn.execute(
+                """SELECT * FROM battle_participants
+                   WHERE battle_id = ? AND npc_id = ?""",
+                (battle_id, npc_id),
+            ).fetchone()
+        elif player_id is not None:
+            row = self.db.conn.execute(
+                """SELECT * FROM battle_participants
+                   WHERE battle_id = ? AND player_id = ?""",
+                (battle_id, player_id),
+            ).fetchone()
+        else:
+            return None
+
+        return self._row_to_participant(row) if row else None
+
     def update_turn_order(
         self, battle_id: int, npc_id: int | None, player_id: int | None, turn_order: int
     ) -> None:

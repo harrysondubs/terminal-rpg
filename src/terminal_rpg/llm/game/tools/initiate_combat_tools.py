@@ -122,7 +122,7 @@ def execute(
         # Step 7: Roll initiative for all participants
         _roll_initiative_for_battle(battle_id, game_state, db, status)
 
-        return f"Combat initiated: '{battle.name}' (Battle ID: {battle_id}). {len(opponent_npcs)} opponent(s) and {len(ally_npcs)} ally/allies. Turn order established."
+        return f"Combat initiated: '{battle.name}' with {len(opponent_npcs)} opponent(s) and {len(ally_npcs)} ally/allies. Turn order established."
 
     except Exception as e:
         error_msg = f"Error initiating combat: {str(e)}"

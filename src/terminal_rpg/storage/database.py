@@ -218,6 +218,7 @@ class Database:
                 campaign_id INTEGER,
                 name TEXT NOT NULL,
                 description TEXT NOT NULL,
+                current_turn_index INTEGER DEFAULT 0,
                 created_at TEXT DEFAULT (datetime('now')),
                 FOREIGN KEY (world_id) REFERENCES worlds(id) ON DELETE RESTRICT,
                 FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
@@ -374,3 +375,26 @@ class Database:
         )
 
         self.conn.commit()
+
+    def migrate_add_battle_turn_index(self):
+        """
+        Migration: Add current_turn_index column to battles table.
+        This tracks which participant's turn it is in combat for proper reload support.
+        """
+        if not self.conn:
+            raise RuntimeError("Database not connected. Call connect() first.")
+
+        cursor = self.conn.cursor()
+
+        # Check if column already exists
+        cursor.execute("PRAGMA table_info(battles)")
+        columns = [row[1] for row in cursor.fetchall()]
+
+        if "current_turn_index" not in columns:
+            cursor.execute(
+                """
+                ALTER TABLE battles
+                ADD COLUMN current_turn_index INTEGER DEFAULT 0
+            """
+            )
+            self.conn.commit()

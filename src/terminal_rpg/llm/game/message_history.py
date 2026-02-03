@@ -30,6 +30,40 @@ def reconstruct_message_history(campaign_id: int, db: Database, limit: int = 50)
     # Logs come in DESC order, reverse for chronological
     logs.reverse()
 
+    return _process_logs_to_messages(logs, f"campaign {campaign_id}")
+
+
+def reconstruct_battle_message_history(battle_id: int, db: Database) -> list[dict]:
+    """
+    Reconstruct Claude API message format from battle-specific campaign logs.
+
+    Args:
+        battle_id: Battle to load history for
+        db: Database connection
+
+    Returns:
+        List of messages in Claude API format
+    """
+    log_repo = CampaignLogRepository(db)
+    logs = log_repo.get_by_battle(battle_id)
+
+    # Logs come in DESC order, reverse for chronological
+    logs.reverse()
+
+    return _process_logs_to_messages(logs, f"battle {battle_id}")
+
+
+def _process_logs_to_messages(logs: list[CampaignLog], context: str) -> list[dict]:
+    """
+    Process campaign logs into Claude API message format.
+
+    Args:
+        logs: List of CampaignLog entries (in chronological order)
+        context: Description for logging (e.g. "campaign 1" or "battle 5")
+
+    Returns:
+        List of messages in Claude API format
+    """
     messages = []
     pending_tool_call_index = None  # Track index of last tool_call message
     pending_tool_use_ids = None  # Track expected tool_use IDs
@@ -102,7 +136,7 @@ def reconstruct_message_history(campaign_id: int, db: Database, limit: int = 50)
         messages.pop(pending_tool_call_index)
 
     # Debug log the reconstructed messages
-    logger.info(f"Reconstructed {len(messages)} messages from campaign {campaign_id}")
+    logger.info(f"Reconstructed {len(messages)} messages from {context}")
     for i, msg in enumerate(messages):
         role = msg["role"]
         content = msg["content"]

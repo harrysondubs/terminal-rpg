@@ -19,10 +19,6 @@ def create_dm_system_prompt(game_state: GameState) -> str:
     world = game_state.world
     location = game_state.location
 
-    # Calculate total stats from equipment
-    total_attack = sum(w.attack for w in game_state.equipped_weapons)
-    total_defense = sum(a.defense for a in game_state.equipped_armor)
-
     prompt = f"""You are the Dungeon Master for an immersive text-based RPG adventure.
 
 # World Context
@@ -40,11 +36,6 @@ def create_dm_system_prompt(game_state: GameState) -> str:
 **Level**: {player.level}
 **HP**: {player.hp}/{player.max_hp}
 **Gold**: {player.gold}g
-
-**Combat Stats**:
-- Attack: +{total_attack} (from equipped weapons)
-- Defense: +{total_defense} (from equipped armor)
-
 **Background**: {player.description}
 
 # Your Role
