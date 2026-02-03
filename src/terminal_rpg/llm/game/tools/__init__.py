@@ -12,6 +12,8 @@ from .gold_tools import TOOL_DEFINITION as GOLD_TOOL
 from .gold_tools import execute as execute_gold
 from .hp_tools import TOOL_DEFINITION as HP_TOOL
 from .hp_tools import execute as execute_hp
+from .initiate_combat_tools import TOOL_DEFINITION as INITIATE_COMBAT_TOOL
+from .initiate_combat_tools import execute as execute_initiate_combat
 from .inventory_tools import (
     ADD_ARMOR_TOOL,
     ADD_ITEM_TOOL,
@@ -53,6 +55,7 @@ __all__ = [
     "GOLD_TOOL",
     "HP_TOOL",
     "ABILITY_CHECK_TOOL",
+    "INITIATE_COMBAT_TOOL",
     "execute_inventory",
     "view_inventory_execute",
     "add_item_execute",
@@ -65,4 +68,5 @@ __all__ = [
     "execute_gold",
     "execute_hp",
     "execute_ability_check",
+    "execute_initiate_combat",
 ]

@@ -5,7 +5,7 @@ Handles preset-based campaign creation with equipment setup and initialization.
 
 from ..campaign_presets import CampaignPreset, CharacterClassPreset, PresetLoader, PresetRegistry
 from ..storage.database import Database
-from ..storage.models import Campaign, Player
+from ..storage.models import Campaign, EquipmentSlotError, Player
 from ..storage.repositories import (
     ArmorRepository,
     CampaignRepository,
@@ -235,11 +235,17 @@ def _add_starting_equipment(
     if primary_weapon_name:
         for weapon_id, weapon in all_weapons.items():
             if weapon.name == primary_weapon_name:
-                player_repo.equip_weapon(player_id, weapon_id)
+                try:
+                    player_repo.equip_weapon(player_id, weapon_id)
+                except EquipmentSlotError as e:
+                    print(f"Warning: Could not auto-equip weapon '{weapon.name}': {e}")
                 break
 
     # Auto-equip armor pieces
     armor_to_equip = auto_equip_config.get("armor", [])
     for armor_id, armor in all_armor.items():
         if armor.name in armor_to_equip:
-            player_repo.equip_armor(player_id, armor_id)
+            try:
+                player_repo.equip_armor(player_id, armor_id)
+            except EquipmentSlotError as e:
+                print(f"Warning: Could not auto-equip armor '{armor.name}': {e}")

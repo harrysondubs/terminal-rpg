@@ -7,6 +7,8 @@ import sqlite3
 from ..models import (
     Armor,
     ArmorType,
+    DamageDiceSides,
+    EquipmentSlotError,
     HandsRequired,
     Item,
     Player,
@@ -159,7 +161,29 @@ class PlayerRepository(BaseRepository):
         )
 
     def equip_weapon(self, player_id: int, weapon_id: int) -> None:
-        """Equip a weapon (sets equipped = True)"""
+        """
+        Equip a weapon (sets equipped = True).
+
+        Validates hand slot constraints:
+        - One two-handed weapon OR
+        - Two one-handed weapons OR
+        - One one-handed weapon + one shield
+
+        Raises:
+            EquipmentSlotError: If equipping would violate hand slot constraints
+        """
+        # Get the weapon to equip
+        weapon_row = self.db.conn.execute(
+            "SELECT * FROM weapons WHERE id = ?", (weapon_id,)
+        ).fetchone()
+        if not weapon_row:
+            raise ValueError(f"Weapon with id {weapon_id} not found")
+        weapon_to_equip = self._row_to_weapon(weapon_row)
+
+        # Validate equipment slots
+        self._validate_weapon_slots(player_id, weapon_to_equip)
+
+        # Equip the weapon
         self.db.conn.execute(
             "UPDATE player_weapons SET equipped = 1 WHERE player_id = ? AND weapon_id = ?",
             (player_id, weapon_id),
@@ -175,7 +199,25 @@ class PlayerRepository(BaseRepository):
         self.db.conn.commit()
 
     def equip_armor(self, player_id: int, armor_id: int) -> None:
-        """Equip an armor piece (sets equipped = True)"""
+        """
+        Equip an armor piece (sets equipped = True).
+
+        For shields, validates hand slot constraints with equipped weapons.
+
+        Raises:
+            EquipmentSlotError: If equipping a shield would violate hand slot constraints
+        """
+        # Get the armor to equip
+        armor_row = self.db.conn.execute("SELECT * FROM armor WHERE id = ?", (armor_id,)).fetchone()
+        if not armor_row:
+            raise ValueError(f"Armor with id {armor_id} not found")
+        armor_to_equip = self._row_to_armor(armor_row)
+
+        # Only validate slots if it's a shield
+        if armor_to_equip.type == ArmorType.SHIELD:
+            self._validate_shield_slots(player_id)
+
+        # Equip the armor
         self.db.conn.execute(
             "UPDATE player_armor SET equipped = 1 WHERE player_id = ? AND armor_id = ?",
             (player_id, armor_id),
@@ -187,6 +229,25 @@ class PlayerRepository(BaseRepository):
         self.db.conn.execute(
             "UPDATE player_armor SET equipped = 0 WHERE player_id = ? AND armor_id = ?",
             (player_id, armor_id),
+        )
+        self.db.conn.commit()
+
+    def unequip_all_weapons(self, player_id: int) -> None:
+        """Unequip all weapons for a player"""
+        self.db.conn.execute(
+            "UPDATE player_weapons SET equipped = 0 WHERE player_id = ?",
+            (player_id,),
+        )
+        self.db.conn.commit()
+
+    def unequip_all_shields(self, player_id: int) -> None:
+        """Unequip all shields for a player"""
+        self.db.conn.execute(
+            """UPDATE player_armor SET equipped = 0
+               WHERE player_id = ? AND armor_id IN (
+                   SELECT id FROM armor WHERE type = 'shield'
+               )""",
+            (player_id,),
         )
         self.db.conn.commit()
 
@@ -273,7 +334,8 @@ class PlayerRepository(BaseRepository):
             description=row["description"],
             type=WeaponType(row["type"]),
             hands_required=HandsRequired(row["hands_required"]),
-            attack=row["attack"],
+            damage_dice_count=row["damage_dice_count"],
+            damage_dice_sides=DamageDiceSides(row["damage_dice_sides"]),
             rarity=Rarity(row["rarity"]),
             value=row["value"],
         )
@@ -287,7 +349,7 @@ class PlayerRepository(BaseRepository):
             name=row["name"],
             description=row["description"],
             type=ArmorType(row["type"]),
-            defense=row["defense"],
+            ac=row["ac"],
             rarity=Rarity(row["rarity"]),
             value=row["value"],
         )
@@ -303,3 +365,119 @@ class PlayerRepository(BaseRepository):
             rarity=Rarity(row["rarity"]),
             value=row["value"],
         )
+
+    def _validate_weapon_slots(self, player_id: int, weapon_to_equip: Weapon) -> None:
+        """
+        Validate that equipping a weapon doesn't violate hand slot constraints.
+
+        Rules:
+        - One two-handed weapon OR
+        - Two one-handed weapons OR
+        - One one-handed weapon + one shield
+
+        Args:
+            player_id: Player ID
+            weapon_to_equip: The weapon being equipped
+
+        Raises:
+            EquipmentSlotError: If equipping would violate constraints
+        """
+        # Get currently equipped weapons (excluding the one we're trying to equip)
+        equipped_weapons = [
+            w for w in self.get_equipped_weapons(player_id) if w.id != weapon_to_equip.id
+        ]
+
+        # Get currently equipped shields
+        equipped_shields = [
+            a for a in self.get_equipped_armor(player_id) if a.type == ArmorType.SHIELD
+        ]
+
+        # Check if trying to equip a two-handed weapon
+        if weapon_to_equip.hands_required == HandsRequired.TWO_HANDED:
+            if equipped_weapons:
+                raise EquipmentSlotError(
+                    f"Cannot equip two-handed weapon '{weapon_to_equip.name}': "
+                    f"already have {len(equipped_weapons)} weapon(s) equipped. "
+                    f"Unequip all weapons first."
+                )
+            if equipped_shields:
+                raise EquipmentSlotError(
+                    f"Cannot equip two-handed weapon '{weapon_to_equip.name}': "
+                    f"shield is equipped. Unequip shield first."
+                )
+
+        # Check if trying to equip a one-handed weapon
+        elif weapon_to_equip.hands_required == HandsRequired.ONE_HANDED:
+            # Check for two-handed weapons already equipped
+            two_handed_weapons = [
+                w for w in equipped_weapons if w.hands_required == HandsRequired.TWO_HANDED
+            ]
+            if two_handed_weapons:
+                raise EquipmentSlotError(
+                    f"Cannot equip one-handed weapon '{weapon_to_equip.name}': "
+                    f"two-handed weapon '{two_handed_weapons[0].name}' is equipped. "
+                    f"Unequip it first."
+                )
+
+            # Check if we already have 2 one-handed weapons
+            one_handed_weapons = [
+                w for w in equipped_weapons if w.hands_required == HandsRequired.ONE_HANDED
+            ]
+            if len(one_handed_weapons) >= 2:
+                raise EquipmentSlotError(
+                    f"Cannot equip one-handed weapon '{weapon_to_equip.name}': "
+                    f"already have 2 one-handed weapons equipped. "
+                    f"Unequip one first."
+                )
+
+            # Check if we have 1 one-handed weapon + 1 shield
+            if len(one_handed_weapons) == 1 and equipped_shields:
+                raise EquipmentSlotError(
+                    f"Cannot equip one-handed weapon '{weapon_to_equip.name}': "
+                    f"already have one weapon and a shield equipped. "
+                    f"Unequip one first."
+                )
+
+    def _validate_shield_slots(self, player_id: int) -> None:
+        """
+        Validate that equipping a shield doesn't violate hand slot constraints.
+
+        Rules:
+        - Can only equip shield with one one-handed weapon
+        - Cannot equip with two-handed weapon or two one-handed weapons
+
+        Args:
+            player_id: Player ID
+
+        Raises:
+            EquipmentSlotError: If equipping shield would violate constraints
+        """
+        equipped_weapons = self.get_equipped_weapons(player_id)
+
+        # No weapons equipped - OK to equip shield
+        if not equipped_weapons:
+            return
+
+        # Check for two-handed weapons
+        two_handed_weapons = [
+            w for w in equipped_weapons if w.hands_required == HandsRequired.TWO_HANDED
+        ]
+        if two_handed_weapons:
+            raise EquipmentSlotError(
+                f"Cannot equip shield: two-handed weapon '{two_handed_weapons[0].name}' "
+                f"is equipped. Unequip it first."
+            )
+
+        # Check for two one-handed weapons
+        one_handed_weapons = [
+            w for w in equipped_weapons if w.hands_required == HandsRequired.ONE_HANDED
+        ]
+        if len(one_handed_weapons) >= 2:
+            raise EquipmentSlotError(
+                "Cannot equip shield: already have 2 one-handed weapons equipped. "
+                "Unequip one weapon first."
+            )
+
+        # If we have exactly 1 one-handed weapon, it's OK to equip shield
+        if len(one_handed_weapons) == 1:
+            return

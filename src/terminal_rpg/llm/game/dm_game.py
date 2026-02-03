@@ -28,6 +28,7 @@ from .tools import (
     CREATE_LOCATION_TOOL,
     GOLD_TOOL,
     HP_TOOL,
+    INITIATE_COMBAT_TOOL,
     REMOVE_INVENTORY_TOOL,
     VIEW_INVENTORY_TOOL,
     VIEW_LOCATIONS_TOOL,
@@ -39,6 +40,7 @@ from .tools import (
     execute_ability_check,
     execute_gold,
     execute_hp,
+    execute_initiate_combat,
     remove_inventory_execute,
     view_inventory_execute,
     view_locations_execute,
@@ -59,6 +61,7 @@ TOOLS = [
     GOLD_TOOL,
     HP_TOOL,
     ABILITY_CHECK_TOOL,
+    INITIATE_COMBAT_TOOL,
 ]
 
 MAX_TOOL_ITERATIONS = 5  # Prevent infinite tool loops
@@ -256,7 +259,8 @@ class DMGame:
                     tool_input["rarity"],
                     tool_input["type"],
                     tool_input["hands_required"],
-                    tool_input["attack"],
+                    tool_input["damage_dice_count"],
+                    tool_input["damage_dice_sides"],
                     tool_input["value"],
                     self.game_state,
                     self.db,
@@ -269,7 +273,7 @@ class DMGame:
                     tool_input["description"],
                     tool_input["rarity"],
                     tool_input["type"],
-                    tool_input["defense"],
+                    tool_input["ac"],
                     tool_input["value"],
                     self.game_state,
                     self.db,
@@ -311,6 +315,16 @@ class DMGame:
                     tool_input["context"],
                     self.game_state,
                     self.db,
+                    status,
+                )
+
+            elif tool_name == "initiate_combat":
+                return execute_initiate_combat(
+                    tool_input["context"],
+                    tool_input["opponents"],
+                    self.game_state,
+                    self.db,
+                    tool_input.get("allies"),
                     status,
                 )
 

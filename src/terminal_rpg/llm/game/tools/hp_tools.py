@@ -63,17 +63,9 @@ def execute(amount: int, game_state: GameState, db: Database) -> str:
 
     # Check for game over
     if new_hp == 0:
-        game_over_msg = f"""[bold red]💀 GAME OVER 💀[/bold red]
+        from ....ui.battle_display import display_game_over
 
-{player.name} has fallen in battle!
-Your adventure ends here.
-
-[bold yellow]Final Stats:[/bold yellow]
-• Level: {player.level}
-• Gold: {player.gold}
-• XP: {player.xp}"""
-        console.print(Panel(game_over_msg, border_style="red", title="☠️  Death"))
-        console.print()
+        display_game_over(player)
         return f"💀 GAME OVER 💀\n\n{player.name} has fallen in battle! Your adventure ends here.\n\nFinal Stats:\n- Level: {player.level}\n- Gold: {player.gold}\n- XP: {player.xp}"
 
     # Create HP bar representation

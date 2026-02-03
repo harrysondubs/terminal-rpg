@@ -71,6 +71,14 @@ class GameEngine:
         if self.game_state.pending_level_up:
             self._handle_level_up()
 
+        # Check if in combat mode
+        if self.game_state.battle is not None:
+            from .combat import CombatEngine
+
+            combat_engine = CombatEngine()
+            combat_engine.run_combat_loop(self.game_state, self.db, self.display, None)
+            return
+
         # Get user input
         user_input = self.display.get_user_input()
 

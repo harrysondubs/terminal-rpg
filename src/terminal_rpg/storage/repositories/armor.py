@@ -15,7 +15,7 @@ class ArmorRepository(BaseRepository):
         """Insert armor, return with ID populated"""
         armor.id = self._execute_insert(
             """INSERT INTO armor
-               (world_id, campaign_id, name, description, type, defense, rarity, value)
+               (world_id, campaign_id, name, description, type, ac, rarity, value)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 armor.world_id,
@@ -23,7 +23,7 @@ class ArmorRepository(BaseRepository):
                 armor.name,
                 armor.description,
                 armor.type.value,
-                armor.defense,
+                armor.ac,
                 armor.rarity.value,
                 armor.value,
             ),
@@ -53,7 +53,7 @@ class ArmorRepository(BaseRepository):
         self.db.conn.execute(
             """UPDATE armor SET
                world_id = ?, campaign_id = ?, name = ?, description = ?,
-               type = ?, defense = ?, rarity = ?, value = ?
+               type = ?, ac = ?, rarity = ?, value = ?
                WHERE id = ?""",
             (
                 armor.world_id,
@@ -61,7 +61,7 @@ class ArmorRepository(BaseRepository):
                 armor.name,
                 armor.description,
                 armor.type.value,
-                armor.defense,
+                armor.ac,
                 armor.rarity.value,
                 armor.value,
                 armor.id,
@@ -82,7 +82,7 @@ class ArmorRepository(BaseRepository):
             name=row["name"],
             description=row["description"],
             type=ArmorType(row["type"]),
-            defense=row["defense"],
+            ac=row["ac"],
             rarity=Rarity(row["rarity"]),
             value=row["value"],
         )

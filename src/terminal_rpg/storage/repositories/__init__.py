@@ -5,6 +5,7 @@ Repository classes for RPG game data persistence.
 from .armor import ArmorRepository
 from .base import BaseRepository
 from .battle import BattleRepository
+from .battle_participant import BattleParticipantRepository
 from .campaign import CampaignRepository
 from .campaign_log import CampaignLogRepository
 from .item import ItemRepository
@@ -25,5 +26,6 @@ __all__ = [
     "NPCRepository",
     "LocationRepository",
     "BattleRepository",
+    "BattleParticipantRepository",
     "CampaignLogRepository",
 ]

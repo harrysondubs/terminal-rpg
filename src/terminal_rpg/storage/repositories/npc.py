@@ -4,7 +4,7 @@ NPC repository for NPC entity CRUD operations.
 
 import sqlite3
 
-from ..models import NPC, Disposition, datetime_from_db
+from ..models import NPC, DamageDiceSides, Disposition, datetime_from_db
 from .base import BaseRepository
 
 
@@ -15,19 +15,24 @@ class NPCRepository(BaseRepository):
         """Insert NPC, return with ID populated"""
         npc.id = self._execute_insert(
             """INSERT INTO npcs
-               (world_id, campaign_id, battle_id, name, character_class, character_species,
-                level, hp, max_hp, xp, gold, disposition)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+               (world_id, campaign_id, name, description, character_class, character_species,
+                level, hp, max_hp, ac, attack_mod, damage_dice_count, damage_dice_sides, initiative_mod, xp, gold, disposition)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 npc.world_id,
                 npc.campaign_id,
-                npc.battle_id,
                 npc.name,
+                npc.description,
                 npc.character_class,
                 npc.character_species,
                 npc.level,
                 npc.hp,
                 npc.max_hp,
+                npc.ac,
+                npc.attack_mod,
+                npc.damage_dice_count,
+                npc.damage_dice_sides.value,
+                npc.initiative_mod,
                 npc.xp,
                 npc.gold,
                 npc.disposition.value,
@@ -58,19 +63,25 @@ class NPCRepository(BaseRepository):
         """Update existing NPC"""
         self.db.conn.execute(
             """UPDATE npcs SET
-               world_id = ?, campaign_id = ?, battle_id = ?, name = ?, character_class = ?,
-               character_species = ?, level = ?, hp = ?, max_hp = ?, xp = ?, gold = ?, disposition = ?
+               world_id = ?, campaign_id = ?, name = ?, description = ?, character_class = ?,
+               character_species = ?, level = ?, hp = ?, max_hp = ?, ac = ?, attack_mod = ?,
+               damage_dice_count = ?, damage_dice_sides = ?, initiative_mod = ?, xp = ?, gold = ?, disposition = ?
                WHERE id = ?""",
             (
                 npc.world_id,
                 npc.campaign_id,
-                npc.battle_id,
                 npc.name,
+                npc.description,
                 npc.character_class,
                 npc.character_species,
                 npc.level,
                 npc.hp,
                 npc.max_hp,
+                npc.ac,
+                npc.attack_mod,
+                npc.damage_dice_count,
+                npc.damage_dice_sides.value,
+                npc.initiative_mod,
                 npc.xp,
                 npc.gold,
                 npc.disposition.value,
@@ -83,19 +94,29 @@ class NPCRepository(BaseRepository):
         """Delete NPC"""
         self._delete_by_id("npcs", npc_id)
 
+    def update_hp(self, npc_id: int, hp: int) -> None:
+        """Update NPC's current HP"""
+        self.db.conn.execute("UPDATE npcs SET hp = ? WHERE id = ?", (hp, npc_id))
+        self.db.conn.commit()
+
     def _row_to_npc(self, row: sqlite3.Row) -> NPC:
         """Convert database row to NPC dataclass"""
         return NPC(
             id=row["id"],
             world_id=row["world_id"],
             campaign_id=row["campaign_id"],
-            battle_id=row["battle_id"],
             name=row["name"],
+            description=row["description"],
             character_class=row["character_class"],
             character_species=row["character_species"],
             level=row["level"],
             hp=row["hp"],
             max_hp=row["max_hp"],
+            ac=row["ac"],
+            attack_mod=row["attack_mod"],
+            damage_dice_count=row["damage_dice_count"],
+            damage_dice_sides=DamageDiceSides(row["damage_dice_sides"]),
+            initiative_mod=row["initiative_mod"],
             xp=row["xp"],
             gold=row["gold"],
             disposition=Disposition(row["disposition"]),

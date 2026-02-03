@@ -98,6 +98,8 @@ class CampaignRepository(BaseRepository):
     def load_game_state(self, campaign_id: int) -> GameState | None:
         """Load complete game state for a campaign"""
         # Import here to avoid circular imports
+        from .battle import BattleRepository
+        from .battle_participant import BattleParticipantRepository
         from .location import LocationRepository
         from .player import PlayerRepository
         from .world import WorldRepository
@@ -110,6 +112,8 @@ class CampaignRepository(BaseRepository):
         world_repo = WorldRepository(self.db)
         player_repo = PlayerRepository(self.db)
         location_repo = LocationRepository(self.db)
+        battle_repo = BattleRepository(self.db)
+        participant_repo = BattleParticipantRepository(self.db)
 
         # Load all data
         world = world_repo.get_by_id(campaign.world_id)
@@ -145,6 +149,17 @@ class CampaignRepository(BaseRepository):
         if not location:
             return None
 
+        # Check for active battle
+        # Find battles where the player is an active participant
+        active_battle = None
+        player_participants = participant_repo.get_by_player(player.id)
+        for participant in player_participants:
+            if participant.is_active:
+                battle = battle_repo.get_by_id(participant.battle_id)
+                if battle:
+                    active_battle = battle
+                    break  # Player should only be in one active battle at a time
+
         equipped_weapons = player_repo.get_equipped_weapons(player.id)
         equipped_armor = player_repo.get_equipped_armor(player.id)
         inventory_items = player_repo.get_inventory_items(player.id)
@@ -161,6 +176,7 @@ class CampaignRepository(BaseRepository):
             inventory_items=inventory_items,
             inventory_weapons=inventory_weapons,
             inventory_armor=inventory_armor,
+            battle=active_battle,  # Include active battle if found
         )
 
     def get_leaderboard(self, limit: int = 10) -> list[tuple[str, str, int, int, bool]]:

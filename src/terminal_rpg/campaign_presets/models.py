@@ -5,7 +5,14 @@ Defines the structure for preset definitions including worlds, locations, equipm
 
 from dataclasses import dataclass
 
-from ..storage.models import ArmorType, Disposition, HandsRequired, Rarity, WeaponType
+from ..storage.models import (
+    ArmorType,
+    DamageDiceSides,
+    Disposition,
+    HandsRequired,
+    Rarity,
+    WeaponType,
+)
 
 
 @dataclass
@@ -42,7 +49,8 @@ class WeaponDefinition:
     description: str
     type: WeaponType
     hands_required: HandsRequired
-    attack: int
+    damage_dice_count: int
+    damage_dice_sides: DamageDiceSides
     rarity: Rarity
     value: int
 
@@ -54,7 +62,7 @@ class ArmorDefinition:
     name: str
     description: str
     type: ArmorType
-    defense: int
+    ac: int
     rarity: Rarity
     value: int
 
@@ -64,10 +72,16 @@ class NPCDefinition:
     """Definition for an NPC or enemy."""
 
     name: str
+    description: str
     character_class: str
     character_species: str
     hp: int
     max_hp: int
+    ac: int
+    attack_mod: int
+    damage_dice_count: int
+    damage_dice_sides: DamageDiceSides
+    initiative_mod: int
     level: int
     xp: int
     gold: int
