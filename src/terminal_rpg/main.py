@@ -270,7 +270,7 @@ def run_load_game_flow(db: Database) -> Campaign | None:
     Returns:
         Selected Campaign if successful, None if cancelled or no saves
     """
-    from .llm.game.message_history import get_recent_messages_for_display
+    from .llm.shared.message_history import get_recent_messages_for_display
 
     # 1. Get all campaigns with world names
     campaign_repo = CampaignRepository(db)

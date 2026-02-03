@@ -5,7 +5,8 @@ Combat engine - handles turn-based combat loop.
 import logging
 import sys
 
-from ..llm.combat.dm_combat import DMCombatNPC, DMCombatPlayer
+from ..llm.combat.dm_combat_npc import DMCombatNPC
+from ..llm.combat.dm_combat_player import DMCombatPlayer
 from ..storage.database import Database
 from ..storage.models import Disposition, GameState
 from ..storage.repositories import (

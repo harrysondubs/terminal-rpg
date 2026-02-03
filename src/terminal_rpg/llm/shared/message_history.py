@@ -33,26 +33,6 @@ def reconstruct_message_history(campaign_id: int, db: Database, limit: int = 50)
     return _process_logs_to_messages(logs, f"campaign {campaign_id}")
 
 
-def reconstruct_battle_message_history(battle_id: int, db: Database) -> list[dict]:
-    """
-    Reconstruct Claude API message format from battle-specific campaign logs.
-
-    Args:
-        battle_id: Battle to load history for
-        db: Database connection
-
-    Returns:
-        List of messages in Claude API format
-    """
-    log_repo = CampaignLogRepository(db)
-    logs = log_repo.get_by_battle(battle_id)
-
-    # Logs come in DESC order, reverse for chronological
-    logs.reverse()
-
-    return _process_logs_to_messages(logs, f"battle {battle_id}")
-
-
 def _process_logs_to_messages(logs: list[CampaignLog], context: str) -> list[dict]:
     """
     Process campaign logs into Claude API message format.
