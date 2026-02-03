@@ -55,7 +55,7 @@ class CombatEngine:
         npc_repo = NPCRepository(db)
         battle_repo = BattleRepository(db)
 
-        # Main combat loop
+        # Main combat loop - processes one turn per iteration
         while True:
             # Get all active participants sorted by turn order
             participants = participant_repo.get_by_battle(game_state.battle.id)
@@ -86,94 +86,74 @@ class CombatEngine:
             # Sort by turn order
             active_participants.sort(key=lambda x: x[0].turn_order or 999)
 
-            # Check if combat should end before starting turns
-            end_status = self._check_combat_end(game_state, db)
-            if end_status == "player_death":
-                self._end_combat_death(game_state)
-                return
-            elif end_status == "victory":
-                self._end_combat_victory(game_state, db)
+            # If no active participants, end combat
+            if not active_participants:
+                logger.warning("No active participants in combat")
                 return
 
-            # Get starting turn index from battle state
-            current_turn_index = game_state.battle.current_turn_index
-            num_participants = len(active_participants)
+            # Get current turn index (wraps automatically with modulo)
+            current_turn_index = game_state.battle.current_turn_index % len(active_participants)
+            participant, npc = active_participants[current_turn_index]
 
-            # If the saved index is out of bounds, reset to 0
-            if current_turn_index >= num_participants:
-                current_turn_index = 0
-                game_state.battle.current_turn_index = 0
-                battle_repo.update_turn_index(game_state.battle.id, 0)
+            # Re-check if participant is still active (may have been killed)
+            fresh_participant = participant_repo.get_by_battle_and_participant(
+                game_state.battle.id, npc_id=participant.npc_id, player_id=participant.player_id
+            )
+            if fresh_participant is None or not fresh_participant.is_active:
+                # Participant was killed/removed, skip to next turn
+                next_turn_index = (current_turn_index + 1) % len(active_participants)
+                game_state.battle.current_turn_index = next_turn_index
+                battle_repo.update_turn_index(game_state.battle.id, next_turn_index)
+                continue
 
-            # Process turns starting from the saved index
-            for i in range(num_participants):
-                # Calculate actual index (wraps around)
-                idx = (current_turn_index + i) % num_participants
-                participant, npc = active_participants[idx]
+            # Process the turn based on participant type
+            if participant.player_id is not None:
+                # Player's turn
+                self._handle_player_turn(active_participants, game_state, db, display, player_dm)
 
-                # Re-check if participant is still active (may have been killed during this round)
-                fresh_participant = participant_repo.get_by_battle_and_participant(
-                    game_state.battle.id, npc_id=participant.npc_id, player_id=participant.player_id
-                )
-                if fresh_participant is None or not fresh_participant.is_active:
-                    # Participant was killed/removed during this round, skip their turn
-                    continue
+                # Check if combat ended (escape or victory)
+                if game_state.battle is None:
+                    return  # Combat escaped
 
-                # Calculate next turn index (for saving after turn completes)
-                next_idx = (idx + 1) % num_participants
+                end_status = self._check_combat_end(game_state, db)
+                if end_status == "player_death":
+                    self._end_combat_death(game_state)
+                    return
+                elif end_status == "victory":
+                    self._end_combat_victory(game_state, db)
+                    return
 
-                if participant.player_id is not None:
-                    # Player's turn - update index before turn (player interaction is immediate)
-                    game_state.battle.current_turn_index = idx
-                    battle_repo.update_turn_index(game_state.battle.id, idx)
+                # Advance to next turn after player completes their action
+                next_turn_index = (current_turn_index + 1) % len(active_participants)
+                game_state.battle.current_turn_index = next_turn_index
+                battle_repo.update_turn_index(game_state.battle.id, next_turn_index)
 
-                    self._handle_player_turn(
-                        active_participants, game_state, db, display, player_dm
-                    )
+            elif npc is not None:
+                # NPC's turn
+                self._handle_npc_turn(npc, active_participants, game_state, db, npc_dm)
 
-                    # Check if combat ended (escape or victory)
-                    if game_state.battle is None:
-                        return  # Combat escaped
+                # Check if combat ended (player death or all enemies dead)
+                end_status = self._check_combat_end(game_state, db)
+                if end_status == "player_death":
+                    self._end_combat_death(game_state)
+                    return
+                elif end_status == "victory":
+                    self._end_combat_victory(game_state, db)
+                    return
 
-                    end_status = self._check_combat_end(game_state, db)
-                    if end_status == "victory":
-                        self._end_combat_victory(game_state, db)
-                        return
+                # Advance to next turn BEFORE the prompt
+                # This ensures if user exits during prompt, correct participant goes next on reload
+                next_turn_index = (current_turn_index + 1) % len(active_participants)
+                game_state.battle.current_turn_index = next_turn_index
+                battle_repo.update_turn_index(game_state.battle.id, next_turn_index)
 
-                    # Advance to next turn after player completes
-                    game_state.battle.current_turn_index = next_idx
-                    battle_repo.update_turn_index(game_state.battle.id, next_idx)
+                # Now wait for player to continue
+                from rich.console import Console
 
-                elif npc is not None:
-                    # NPC's turn - update index before turn starts
-                    game_state.battle.current_turn_index = idx
-                    battle_repo.update_turn_index(game_state.battle.id, idx)
-
-                    self._handle_npc_turn(npc, active_participants, game_state, db, npc_dm)
-
-                    # Check if combat ended (player death or all enemies dead)
-                    end_status = self._check_combat_end(game_state, db)
-                    if end_status == "player_death":
-                        self._end_combat_death(game_state)
-                        return
-                    elif end_status == "victory":
-                        self._end_combat_victory(game_state, db)
-                        return
-
-                    # Advance to next turn AFTER NPC completes but BEFORE the "Press Enter" prompt
-                    # This ensures if user reloads during the prompt, the next participant goes
-                    game_state.battle.current_turn_index = next_idx
-                    battle_repo.update_turn_index(game_state.battle.id, next_idx)
-
-                    # Now wait for player to continue (after turn counter is advanced)
-                    from rich.console import Console
-
-                    console = Console()
-                    console.print()
-                    console.print("[dim]Press Enter to continue...[/dim]")
-                    input()
-
-            # Round complete - turn counter already points to first participant via wrap-around
+                console = Console()
+                console.print()
+                console.print("[dim]Press Enter to continue...[/dim]")
+                input()
 
     def _handle_player_turn(
         self,
@@ -218,7 +198,7 @@ class CombatEngine:
 
         if error:
             display.console.print(f"[red]Error: {error}[/red]")
-            display.console.print("[yellow]Please try again.[/yellow]")
+            display.console.print("[yellow]Please try typing another command.[/yellow]")
             # Re-try the turn
             self._handle_player_turn(active_participants, game_state, db, display, player_dm)
             return
