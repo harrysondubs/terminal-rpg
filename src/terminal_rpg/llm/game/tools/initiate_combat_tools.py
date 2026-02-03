@@ -72,7 +72,7 @@ def execute(
 
     try:
         # Step 1: Generate the battle
-        console.print("[dim]Generating battle...[/dim]")
+        console.print("[dim]Initiating combat...[/dim]")
         battle_id = generate_battle_from_context(context, opponents, allies, game_state, db)
 
         if battle_id is None:

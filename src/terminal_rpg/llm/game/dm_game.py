@@ -11,7 +11,7 @@ from anthropic import APIError
 from ...storage.database import Database
 from ...storage.models import GameState
 from ..claude_api import ClaudeModel, create_message
-from .message_history import (
+from ..shared.message_history import (
     reconstruct_message_history,
     save_assistant_message,
     save_tool_call,
